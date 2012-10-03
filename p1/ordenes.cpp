@@ -5,19 +5,14 @@
 #include <map>
 
 #include "lib/string_lib.cpp"
+#include "lib/vendedor.cpp"
 
 using namespace std;
 
-map<string, int> tabla_producto_cantidad;
+map<string, int> tabla_pedidos;
 // relaciona nombre del producto a la cantidad que se desea ordenar
 
-typedef struct {
-    string proveedor;
-    string direccion;
-    int puerto;
-} proveedor;
-
-map<string, proveedor> tabla_proveedores;
+map<string, vendedor*> tabla_proveedores;
 
 int imprimir_uso() {
     cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
@@ -25,7 +20,7 @@ int imprimir_uso() {
     return 1; // reportar error a la consola
 }
 
-void inicializar_tabla_productos(string archivo_pedidos) {
+void inicializar_tabla_pedidos(string archivo_pedidos) {
     ifstream datos;
     datos.open(archivo_pedidos.c_str());
 
@@ -42,7 +37,7 @@ void inicializar_tabla_productos(string archivo_pedidos) {
                 istringstream s(linea.substr(pos_separador + 1, linea.length()));
                 s >> cantidad_producto; // no se verifica formato del archivo
 
-                tabla_producto_cantidad[nombre_producto] = cantidad_producto;
+                tabla_pedidos[nombre_producto] = cantidad_producto;
             }
         }
     }
@@ -53,10 +48,10 @@ void inicializar_tabla_productos(string archivo_pedidos) {
     datos.close();
 }
 
-void imprimir_tabla_productos() {
+void imprimir_tabla_pedidos() {
     map<string, int>::const_iterator pos;
     cout << "{";
-    for (pos = tabla_producto_cantidad.begin(); pos != tabla_producto_cantidad.end(); ++pos) {
+    for (pos = tabla_pedidos.begin(); pos != tabla_pedidos.end(); ++pos) {
         cout << "\"" << pos->first << "\": ";
         cout << pos->second << ", ";
     }
@@ -64,27 +59,23 @@ void imprimir_tabla_productos() {
 }
 
 void imprimir_tabla_proveedores() {
-    map<string, proveedor>::const_iterator pos;
+    map<string, vendedor*>::const_iterator pos;
     cout << "{";
     for (pos = tabla_proveedores.begin(); 
          pos != tabla_proveedores.end(); ++pos) {
         cout << "\"" << pos->first << "\": <";
-        cout << pos->second.direccion << ", ";
-        cout << pos->second.puerto << ">, ";
+        cout << pos->second->direccion << ", ";
+        cout << pos->second->puerto << ">, ";
     }
     cout << "}" << endl;
 }
 
-void inicializar_tablas_proveedor(string archivo_proveedores) {
+void inicializar_tabla_proveedores(string archivo_proveedores) {
     ifstream datos;
     datos.open(archivo_proveedores.c_str());
 
     if (datos.is_open()) {
         string linea;
-        string resto;
-        string nombre_proveedor;
-        string direccion_proveedor;
-        int puerto_proveedor;
         while (datos.good()) {
             getline(datos, linea);
             if (linea.substr(0, 1) == "#") {
@@ -92,21 +83,8 @@ void inicializar_tablas_proveedor(string archivo_proveedores) {
                 continue;
             }
             if (linea != "") {
-
-                // se llena la tabla de pedidos
-                int pos_separador = linea.find("&");
-                nombre_proveedor = trim(linea.substr(0, pos_separador));
-                resto = linea.substr(pos_separador + 1, linea.length());
-
-                int pos_separador_2 = resto.find("&");
-                direccion_proveedor = trim(resto.substr(0, pos_separador_2));
-
-                istringstream s(resto.substr(pos_separador_2 + 1, resto.length()));
-                s >> puerto_proveedor;
-
-                proveedor p = {nombre_proveedor,
-                               direccion_proveedor, puerto_proveedor};
-                tabla_proveedores[nombre_proveedor] = p;
+                vendedor* v = string_a_vendedor(linea);
+                tabla_proveedores[v->nombre] = v;
             }
         }
     }
@@ -118,10 +96,10 @@ void inicializar_tablas_proveedor(string archivo_proveedores) {
 }
 
 int basico(string archivo_pedidos, string archivo_proveedores) {
-    inicializar_tabla_productos(archivo_pedidos);
-    inicializar_tablas_proveedor(archivo_proveedores);
+    inicializar_tabla_pedidos(archivo_pedidos);
+    inicializar_tabla_proveedores(archivo_proveedores);
 
-    imprimir_tabla_productos();
+    imprimir_tabla_pedidos();
     imprimir_tabla_proveedores();
     //print_map_2(tabla_proveedores);
 
