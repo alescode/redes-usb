@@ -5,11 +5,10 @@
 #include <map>
 
 #include "lib/string_lib.cpp"
-#include "lib/map_lib.cpp"
 
 using namespace std;
 
-map<string, int> tabla_pedidos;
+map<string, int> tabla_producto_cantidad;
 // relaciona nombre del producto a la cantidad que se desea ordenar
 
 map<string, string>tabla_proveedor_direccion;
@@ -25,7 +24,7 @@ int imprimir_uso() {
     return 1; // reportar error a la consola
 }
 
-void inicializar_tabla_pedidos(string archivo_pedidos) {
+void inicializar_tabla_productos(string archivo_pedidos) {
     ifstream datos;
     datos.open(archivo_pedidos.c_str());
 
@@ -42,7 +41,7 @@ void inicializar_tabla_pedidos(string archivo_pedidos) {
                 istringstream s(linea.substr(pos_separador + 1, linea.length()));
                 s >> cantidad_producto; // no se verifica formato del archivo
 
-                tabla_pedidos[nombre_producto] = cantidad_producto;
+                tabla_producto_cantidad[nombre_producto] = cantidad_producto;
             }
         }
     }
@@ -53,10 +52,10 @@ void inicializar_tabla_pedidos(string archivo_pedidos) {
     datos.close();
 }
 
-void imprimir_tabla_pedidos() {
+void imprimir_tabla_productos() {
     map<string, int>::const_iterator pos;
     cout << "{";
-    for (pos = tabla_pedidos.begin(); pos != tabla_pedidos.end(); ++pos) {
+    for (pos = tabla_producto_cantidad.begin(); pos != tabla_producto_cantidad.end(); ++pos) {
         cout << "\"" << pos->first << "\": ";
         cout << pos->second << ", ";
     }
@@ -87,6 +86,10 @@ void inicializar_tablas_proveedor(string archivo_proveedores) {
         int puerto_proveedor;
         while (datos.good()) {
             getline(datos, linea);
+            if (linea.substr(0, 1) == "#") {
+                // comentarios
+                continue;
+            }
             if (linea != "") {
 
                 // se llena la tabla de pedidos
@@ -97,7 +100,7 @@ void inicializar_tablas_proveedor(string archivo_proveedores) {
                 int pos_separador_2 = resto.find("&");
                 direccion_proveedor = trim(resto.substr(0, pos_separador_2));
 
-                istringstream s(linea.substr(pos_separador_2 + 1, linea.length()));
+                istringstream s(resto.substr(pos_separador_2 + 1, resto.length()));
                 s >> puerto_proveedor;
 
                 tabla_proveedor_direccion[nombre_proveedor] = direccion_proveedor;
@@ -113,10 +116,10 @@ void inicializar_tablas_proveedor(string archivo_proveedores) {
 }
 
 int basico(string archivo_pedidos, string archivo_proveedores) {
-    inicializar_tabla_pedidos(archivo_pedidos);
+    inicializar_tabla_productos(archivo_pedidos);
     inicializar_tablas_proveedor(archivo_proveedores);
 
-    imprimir_tabla_pedidos();
+    imprimir_tabla_productos();
     imprimir_tabla_proveedores();
     //print_map_2(tabla_proveedores);
 
