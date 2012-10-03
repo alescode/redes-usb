@@ -8,9 +8,13 @@
 
 using namespace std;
 
-map<string, int>tabla_producto_inventario;
+typedef struct {
+    string nombre;
+    int cantidad;
+    double precio;
+} producto;
 
-map<string, double>tabla_producto_precio;
+map<string, producto> tabla_productos;
 
 int imprimir_uso() {
     cerr << "Uso: proveedor -f [archivo de inventario] -p [puerto]" << endl;
@@ -47,8 +51,9 @@ void inicializar_tablas_productos(string archivo_inventario) {
                 istringstream t(resto.substr(pos_separador_2 + 1, resto.length()));
                 t >> precio_producto;
 
-                tabla_producto_inventario[nombre_producto] = inventario_producto;
-                tabla_producto_precio[nombre_producto] = precio_producto;
+                producto p = {nombre_producto, inventario_producto,
+                              precio_producto};
+                tabla_productos[nombre_producto] = p;
             }
         }
     }
@@ -60,13 +65,13 @@ void inicializar_tablas_productos(string archivo_inventario) {
 }
 
 void imprimir_tabla_productos() {
-    map<string, int>::const_iterator pos;
+    map<string, producto>::const_iterator pos;
     cout << "{";
-    for (pos = tabla_producto_inventario.begin();
-         pos != tabla_producto_inventario.end(); ++pos) {
+    for (pos = tabla_productos.begin();
+         pos != tabla_productos.end(); ++pos) {
         cout << "\"" << pos->first << "\": <";
-        cout << pos->second << ", ";
-        cout << fixed << tabla_producto_precio[pos->first] << ">, ";
+        cout << pos->second.cantidad << ", ";
+        cout << fixed << pos->second.precio << ">, ";
     }
     cout << "}" << endl;
 }

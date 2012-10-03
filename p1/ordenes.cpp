@@ -11,12 +11,13 @@ using namespace std;
 map<string, int> tabla_producto_cantidad;
 // relaciona nombre del producto a la cantidad que se desea ordenar
 
-map<string, string>tabla_proveedor_direccion;
-// relaciona nombre del proveedor a direccion
-// no se encuentra <tuple> en Mac OS X, habría sido más cómodo usar
-// un solo map
+typedef struct {
+    string proveedor;
+    string direccion;
+    int puerto;
+} proveedor;
 
-map<string, int>tabla_proveedor_puerto;
+map<string, proveedor> tabla_proveedores;
 
 int imprimir_uso() {
     cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
@@ -63,13 +64,13 @@ void imprimir_tabla_productos() {
 }
 
 void imprimir_tabla_proveedores() {
-    map<string, string>::const_iterator pos;
+    map<string, proveedor>::const_iterator pos;
     cout << "{";
-    for (pos = tabla_proveedor_direccion.begin(); 
-         pos != tabla_proveedor_direccion.end(); ++pos) {
+    for (pos = tabla_proveedores.begin(); 
+         pos != tabla_proveedores.end(); ++pos) {
         cout << "\"" << pos->first << "\": <";
-        cout << pos->second << ", ";
-        cout << tabla_proveedor_puerto[pos->first] << ">, ";
+        cout << pos->second.direccion << ", ";
+        cout << pos->second.puerto << ">, ";
     }
     cout << "}" << endl;
 }
@@ -103,8 +104,9 @@ void inicializar_tablas_proveedor(string archivo_proveedores) {
                 istringstream s(resto.substr(pos_separador_2 + 1, resto.length()));
                 s >> puerto_proveedor;
 
-                tabla_proveedor_direccion[nombre_proveedor] = direccion_proveedor;
-                tabla_proveedor_puerto[nombre_proveedor] = puerto_proveedor;
+                proveedor p = {nombre_proveedor,
+                               direccion_proveedor, puerto_proveedor};
+                tabla_proveedores[nombre_proveedor] = p;
             }
         }
     }
