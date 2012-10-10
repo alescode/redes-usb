@@ -3,6 +3,9 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #include "lib/producto.cpp"
 
@@ -52,6 +55,22 @@ void inicializar_tabla_productos(string archivo_inventario) {
     datos.close();
 }
 
+int conectar(int puerto) {
+    struct sockaddr_in servidor;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    bzero((char *) &servidor, sizeof(servidor));
+    servidor.sin_family = AF_INET;
+    servidor.sin_addr.s_addr = INADDR_ANY;
+    servidor.sin_port = htons(puerto);
+
+    if (bind(sockfd, (struct sockaddr *) &servidor, 
+                sizeof(servidor)) < 0) {
+        return -1;
+    }
+
+    return sockfd;
+}
+
 int main(int argc, char** argv) {
     if (argc != 5) {
         return imprimir_uso();
@@ -66,5 +85,34 @@ int main(int argc, char** argv) {
     s >> puerto;
 
     inicializar_tabla_productos(archivo_inventario);
-    imprimir_tabla_productos();
+    int sockfd = conectar(puerto);
+    if (sockfd < 0) {
+        cerr << "Error de conexion" << endl;
+    }
+
+    listen(sockfd, 5);
+
+    struct sockaddr_in cliente;
+    socklen_t clilen = sizeof(cliente);
+    int newsockfd = accept(sockfd, (struct sockaddr*) &cliente, &clilen);
+    if (newsockfd < 0) {
+        cerr << "Error de conexion al aceptar" << endl;
+    }
+    close(sockfd);
+
+    char buffer[256];
+    bzero(buffer, 256);
+    if (!read(newsockfd, buffer, 255)) {
+        cerr << "Error al leer" << endl;
+    }
+    cout << "Mensaje del cliente: " << string(buffer) << endl;
+
+    bzero(buffer, 256);
+    string u = "hola";
+    strcpy(buffer, u.c_str());
+    if (!write(newsockfd, buffer, 255)) {
+        cerr << "Error al escribir" << endl;
+    }
+    close(newsockfd);
+
 }

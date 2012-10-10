@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <errno.h>
 
 #include "lib/string_lib.cpp"
 #include "lib/vendedor.cpp"
@@ -113,7 +114,7 @@ int conectar(int puerto, string hostname) {
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET; // tipo de sockets = Internet
-    serv_addr.sin_addr.s_addr=((struct in_addr *)(server->h_addr))->s_addr;
+    serv_addr.sin_addr.s_addr = ((struct in_addr *)(server->h_addr))->s_addr;
     serv_addr.sin_port = htons(puerto);
 
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
@@ -157,15 +158,18 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             strcpy(buffer, producto.c_str());
             printf("%s\n", buffer);
 
-            if (!write(sockfd, buffer, strlen(buffer))) {
+            if (!write(sockfd, buffer, 255)) {
+                cout << "error al escribir" << endl;
                 return -1;
             }
 
             bzero(buffer, 256);
 
-            if (!read(sockfd, buffer, strlen(buffer))) {
-                return -1;
+            if (!read(sockfd, buffer, 255)) {
+                cout << "error al leer" << endl;
+                exit(1);
             }
+            printf("Mensaje del servidor: %s\n", buffer);
 
         }
         close(sockfd);
