@@ -1,3 +1,2 @@
 #Archivo de maquinas
-El Picoteo & korba.ldc.usb.ve  & 4356
-La Pala  & lala.ldc.usb.ve  & 7654
+Yo mesmo & localhost & 41138

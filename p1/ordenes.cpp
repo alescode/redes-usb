@@ -3,6 +3,11 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 #include "lib/string_lib.cpp"
 #include "lib/vendedor.cpp"
@@ -95,23 +100,81 @@ void inicializar_tabla_proveedores(string archivo_proveedores) {
     datos.close();
 }
 
+int conectar(int puerto, string hostname) {
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        return -1; // error abriendo el socket
+    }
+
+    server = gethostbyname(hostname.c_str());
+
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET; // tipo de sockets = Internet
+    serv_addr.sin_addr.s_addr=((struct in_addr *)(server->h_addr))->s_addr;
+    serv_addr.sin_port = htons(puerto);
+
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+        return -2; // error de conexion
+    }
+
+    return sockfd;
+}
+
+void producto_en_buffer(int cantidad, string nombre_producto, char* buffer) {
+    stringstream ss;
+    ss << cantidad << "&" << nombre_producto;
+    strcpy(buffer, ss.str().c_str());
+}
+
 int basico(string archivo_pedidos, string archivo_proveedores) {
     inicializar_tabla_pedidos(archivo_pedidos);
     inicializar_tabla_proveedores(archivo_proveedores);
 
     map<string, vendedor*>::const_iterator proov_iter;
+    int puerto;
+    string hostname;
     for (proov_iter = tabla_proveedores.begin(); 
          proov_iter != tabla_proveedores.end(); ++proov_iter) {
-        cout << proov_iter->first << ": " << proov_iter->second->direccion 
-             << ", puerto " << proov_iter->second->puerto << endl;
+        puerto = proov_iter->second->puerto;
+        hostname = proov_iter->second->direccion;
+
+        cout << proov_iter->first << ": " << hostname
+             << ", puerto " << puerto << endl;
 
         map<string, int>::const_iterator pedid_iter;
+        string producto;
+        int cantidad;
+        char buffer[256];
+
+        int sockfd = conectar(puerto, hostname);
+
         for (pedid_iter = tabla_pedidos.begin(); 
              pedid_iter != tabla_pedidos.end(); ++pedid_iter) {
+            producto = pedid_iter->first;
+            cantidad = pedid_iter->second;
 
-            cout << " Quiero " << pedid_iter->second << " unidades de "
-                 << pedid_iter->first << endl;
+            cout << " Quiero " << cantidad << " cantidad de "
+                 << producto << endl;
+
+            bzero(buffer, 256);
+            producto_en_buffer(cantidad, producto, buffer);
+            printf("%s\n", buffer);
+
+            if (!write(sockfd, buffer, strlen(buffer))) {
+                return -1;
+            }
+
+            bzero(buffer, 256);
+
+            if (!read(sockfd, buffer, strlen(buffer))) {
+                return -1;
+            }
+
         }
+        close(sockfd);
     }
 
     return 0;
