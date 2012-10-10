@@ -123,12 +123,6 @@ int conectar(int puerto, string hostname) {
     return sockfd;
 }
 
-void producto_en_buffer(int cantidad, string nombre_producto, char* buffer) {
-    stringstream ss;
-    ss << cantidad << "&" << nombre_producto;
-    strcpy(buffer, ss.str().c_str());
-}
-
 int basico(string archivo_pedidos, string archivo_proveedores) {
     inicializar_tabla_pedidos(archivo_pedidos);
     inicializar_tabla_proveedores(archivo_proveedores);
@@ -160,7 +154,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
                  << producto << endl;
 
             bzero(buffer, 256);
-            producto_en_buffer(cantidad, producto, buffer);
+            strcpy(buffer, producto.c_str());
             printf("%s\n", buffer);
 
             if (!write(sockfd, buffer, strlen(buffer))) {
