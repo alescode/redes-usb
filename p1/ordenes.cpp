@@ -99,9 +99,20 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
     inicializar_tabla_pedidos(archivo_pedidos);
     inicializar_tabla_proveedores(archivo_proveedores);
 
-    imprimir_tabla_pedidos();
-    imprimir_tabla_proveedores();
-    //print_map_2(tabla_proveedores);
+    map<string, vendedor*>::const_iterator proov_iter;
+    for (proov_iter = tabla_proveedores.begin(); 
+         proov_iter != tabla_proveedores.end(); ++proov_iter) {
+        cout << proov_iter->first << ": " << proov_iter->second->direccion 
+             << ", puerto " << proov_iter->second->puerto << endl;
+
+        map<string, int>::const_iterator pedid_iter;
+        for (pedid_iter = tabla_pedidos.begin(); 
+             pedid_iter != tabla_pedidos.end(); ++pedid_iter) {
+
+            cout << " Quiero " << pedid_iter->second << " unidades de "
+                 << pedid_iter->first << endl;
+        }
+    }
 
     return 0;
 }
