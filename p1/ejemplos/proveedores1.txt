@@ -1,0 +1,2 @@
+#Archivo de maquinas
+Yo mesmo & localhost & 41139

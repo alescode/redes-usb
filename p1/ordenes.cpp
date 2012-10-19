@@ -141,18 +141,13 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 
         map<string, int>::const_iterator pedid_iter;
         string producto;
-        int cantidad;
         char buffer[256];
 
-        int sockfd = conectar(puerto, hostname);
-
+        int sockfd;
         for (pedid_iter = tabla_pedidos.begin(); 
              pedid_iter != tabla_pedidos.end(); ++pedid_iter) {
+            sockfd = conectar(puerto, hostname);
             producto = pedid_iter->first;
-            cantidad = pedid_iter->second;
-
-            cout << " Quiero " << cantidad << " cantidad de "
-                 << producto << endl;
 
             bzero(buffer, 256);
             strcpy(buffer, producto.c_str());
@@ -171,8 +166,9 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             }
             printf("Mensaje del servidor: %s\n", buffer);
 
+            close(sockfd);
         }
-        close(sockfd);
+        cout << "ya lo cerre" << endl;
     }
 
     return 0;
