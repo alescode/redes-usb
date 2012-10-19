@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <vector>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,6 +17,7 @@
 using namespace std;
 
 map<string, int> tabla_pedidos;
+vector<string> pedidos;
 // relaciona nombre del producto a la cantidad que se desea ordenar
 
 map<string, vendedor*> tabla_proveedores;
@@ -23,7 +25,7 @@ map<string, vendedor*> tabla_proveedores;
 int imprimir_uso() {
     cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
         << "[archivo de proveedores]" << endl;
-    return 1; // reportar error a la consola
+    return 1;
 }
 
 void inicializar_tabla_pedidos(string archivo_pedidos) {
@@ -40,6 +42,7 @@ void inicializar_tabla_pedidos(string archivo_pedidos) {
                 // se llena la tabla de pedidos
                 int pos_separador = linea.find("&");
                 nombre_producto = trim(linea.substr(0, pos_separador));
+                pedidos.push_back(nombre_producto);
                 istringstream s(linea.substr(pos_separador + 1, linea.length()));
                 s >> cantidad_producto; // no se verifica formato del archivo
 
@@ -139,15 +142,15 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
         cout << proov_iter->first << ": " << hostname
              << ", puerto " << puerto << endl;
 
-        map<string, int>::const_iterator pedid_iter;
+        vector<string>::const_iterator pedid_iter;
         string producto;
         char buffer[256];
 
         int sockfd;
-        for (pedid_iter = tabla_pedidos.begin(); 
-             pedid_iter != tabla_pedidos.end(); ++pedid_iter) {
+        for (pedid_iter = pedidos.begin(); 
+             pedid_iter != pedidos.end(); ++pedid_iter) {
             sockfd = conectar(puerto, hostname);
-            producto = pedid_iter->first;
+            producto = *pedid_iter;
 
             bzero(buffer, 256);
             strcpy(buffer, producto.c_str());
