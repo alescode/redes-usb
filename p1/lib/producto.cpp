@@ -1,26 +1,15 @@
-#include <string>
-#include <sstream>
-#include <iostream>
-
-#include "string_lib.cpp"
+#include "producto.h"
 
 using namespace std;
 
-class producto {
-    public:
-        string nombre;
-        int cantidad;
-        double precio;
-
-        producto(string n, int c, double p) {
+producto::producto(string n, int c, double p, string v = "") {
             nombre = n;
             cantidad = c;
             precio = p;
-        }
-};
+            nombre_vendedor = v;
+}
 
-
-producto* string_a_producto(string linea) {
+producto* cargar_producto(string linea) {
     string resto;
     string nombre_producto;
     int inventario_producto;
@@ -38,5 +27,24 @@ producto* string_a_producto(string linea) {
 
     producto* p = new producto(nombre_producto, inventario_producto,
                   precio_producto);
+    return p;
+}
+
+producto* mensaje_a_producto(string linea, string nombre_producto, 
+                             string nombre_vendedor) {
+    string resto;
+    int cantidad_producto;
+    double precio_producto;
+    int pos_separador = linea.find("&");
+
+    istringstream s((linea.substr(0, pos_separador)));
+    s >> cantidad_producto;
+
+    resto = linea.substr(pos_separador + 1, linea.length());
+    istringstream t(resto);
+    t >> precio_producto;
+
+    producto* p = new producto(nombre_producto, cantidad_producto,
+                  precio_producto, nombre_vendedor);
     return p;
 }

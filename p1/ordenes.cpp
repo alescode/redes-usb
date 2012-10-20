@@ -4,23 +4,48 @@
 #include <sstream>
 #include <map>
 #include <vector>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+#include <queue>
 
-#include "lib/string_lib.cpp"
+#include "lib/string_lib.h"
+#include "lib/producto.h"
 #include "lib/vendedor.cpp"
 
 using namespace std;
+
+class comparacionProductos {
+    bool reverse;
+    public:
+        comparacionProductos(const bool& revparam=false) {
+            reverse=revparam;
+        }
+
+        bool operator() (const producto& lhs, const producto& rhs) const {
+            if (reverse) return (lhs.precio < rhs.precio);
+            else return (lhs.precio > rhs.precio);
+        }
+};
 
 map<string, int> tabla_pedidos;
 vector<string> pedidos;
 // relaciona nombre del producto a la cantidad que se desea ordenar
 
 map<string, vendedor*> tabla_proveedores;
+
+map<string, priority_queue<producto, 
+             vector<producto>, comparacionProductos>* > tabla_consultas;
+
+void insertar_en_tabla_consultas(producto* p) {
+    if (!tabla_consultas[p->nombre]) {
+        tabla_consultas[p->nombre] = new priority_queue<producto,
+                                     vector<producto>, comparacionProductos>;
+    }
+    tabla_consultas[p->nombre]->push(*p);
+}
 
 int imprimir_uso() {
     cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
@@ -143,17 +168,17 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
              << ", puerto " << puerto << endl;
 
         vector<string>::const_iterator pedid_iter;
-        string producto;
+        string pedido;
         char buffer[256];
 
         int sockfd;
         for (pedid_iter = pedidos.begin(); 
              pedid_iter != pedidos.end(); ++pedid_iter) {
             sockfd = conectar(puerto, hostname);
-            producto = *pedid_iter;
+            pedido = *pedid_iter;
 
             bzero(buffer, 256);
-            strcpy(buffer, producto.c_str());
+            strcpy(buffer, pedido.c_str());
             printf("%s\n", buffer);
 
             if (!write(sockfd, buffer, 255)) {
@@ -167,6 +192,11 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
                 cout << "error al leer" << endl;
                 exit(1);
             }
+
+            if (buffer[0] != '&') { // mensaje no vacío
+                producto* p = mensaje_a_producto(buffer, pedido, proov_iter->first);
+            }
+
             printf("Mensaje del servidor: %s\n", buffer);
 
             close(sockfd);

@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "lib/producto.cpp"
+#include "lib/producto.h"
 
 using namespace std;
 
@@ -46,7 +46,7 @@ void inicializar_tabla_productos(string archivo_inventario) {
                 continue;
             }
             if (linea != "") {
-                producto* p = string_a_producto(linea);
+                producto* p = cargar_producto(linea);
                 tabla_productos[p->nombre] = p;
             }
         }

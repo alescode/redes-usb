@@ -2,6 +2,8 @@
 #include <sstream>
 #include <iostream>
 
+#include "string_lib.h"
+
 using namespace std;
 
 class vendedor {

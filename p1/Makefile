@@ -1,4 +1,8 @@
-# no es la forma más "correcta", pero hace el trabajo
-# user-friendliness de make--
+%.o: %.cpp
+	$(CPP) -c $< -o $@
+
 all:
 	make ordenes proveedor
+
+ordenes: lib/string_lib.o lib/producto.o
+proveedor: lib/string_lib.o lib/producto.o lib/vendedor.o
