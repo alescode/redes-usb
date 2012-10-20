@@ -10,25 +10,13 @@
 #include <netdb.h>
 #include <errno.h>
 #include <queue>
+#include <iomanip>
 
 #include "lib/string_lib.h"
 #include "lib/producto.h"
 #include "lib/vendedor.cpp"
 
 using namespace std;
-
-class comparacionProductos {
-    bool reverse;
-    public:
-        comparacionProductos(const bool& revparam=false) {
-            reverse=revparam;
-        }
-
-        bool operator() (const producto& lhs, const producto& rhs) const {
-            if (reverse) return (lhs.precio < rhs.precio);
-            else return (lhs.precio > rhs.precio);
-        }
-};
 
 map<string, int> tabla_pedidos;
 vector<string> pedidos;
@@ -45,6 +33,36 @@ void insertar_en_tabla_consultas(producto* p) {
                                      vector<producto>, comparacionProductos>;
     }
     tabla_consultas[p->nombre]->push(*p);
+}
+
+void imprimir_reporte() {
+    cout.precision(2);
+    cout << left;
+    map<string, priority_queue<producto, 
+             vector<producto>, comparacionProductos>* >::const_iterator pos;
+    cout << "CONSULTA" << endl;
+    cout << setw(30) << "PRODUCTO" << setw(20) << "PROVEEDOR" << setw(15) << "PRECIO UN."
+            << setw(10) << "CANTIDAD" << setw(10) << "COSTO TOTAL" << endl;
+    double total_consulta;
+    for (pos = tabla_consultas.begin(); 
+         pos != tabla_consultas.end(); ++pos) {
+
+        string nombre_producto = pos->first;
+        int unidades_faltantes = tabla_pedidos[nombre_producto];
+
+        while (!pos->second->empty() && unidades_faltantes > 0) {
+            cout << setw(30) << nombre_producto << setw(20);
+            producto p = pos->second->top();
+            unidades_faltantes -= p.cantidad;
+            cout << p.nombre_vendedor << setw(15) << fixed
+                 << p.precio << setw(10) << p.cantidad << setw(10) 
+                 << fixed << p.cantidad * p.precio << endl;
+            total_consulta += p.cantidad * p.precio;
+            pos->second->pop();
+        }
+    }
+    cout << setw(30) << "TOTAL" << setw(20) << " " << setw(15) << " "
+         << setw(10) << " " << setw(10) << total_consulta << endl;
 }
 
 int imprimir_uso() {
@@ -164,8 +182,8 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
         puerto = proov_iter->second->puerto;
         hostname = proov_iter->second->direccion;
 
-        cout << proov_iter->first << ": " << hostname
-             << ", puerto " << puerto << endl;
+        //cout << proov_iter->first << ": " << hostname
+             //<< ", puerto " << puerto << endl;
 
         vector<string>::const_iterator pedid_iter;
         string pedido;
@@ -179,7 +197,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 
             bzero(buffer, 256);
             strcpy(buffer, pedido.c_str());
-            printf("%s\n", buffer);
+            //printf("%s\n", buffer);
 
             if (!write(sockfd, buffer, 255)) {
                 cout << "error al escribir" << endl;
@@ -195,14 +213,16 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 
             if (buffer[0] != '&') { // mensaje no vacío
                 producto* p = mensaje_a_producto(buffer, pedido, proov_iter->first);
+                insertar_en_tabla_consultas(p);
             }
 
-            printf("Mensaje del servidor: %s\n", buffer);
+            //printf("Mensaje del servidor: %s\n", buffer);
 
             close(sockfd);
         }
-        cout << "ya lo cerre" << endl;
+        //cout << "Canal cerrado" << endl;
     }
+    imprimir_reporte();
 
     return 0;
 }
