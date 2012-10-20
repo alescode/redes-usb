@@ -43,7 +43,7 @@ void imprimir_reporte() {
     cout << "CONSULTA" << endl;
     cout << setw(30) << "PRODUCTO" << setw(20) << "PROVEEDOR" << setw(15) << "PRECIO UN."
             << setw(10) << "CANTIDAD" << setw(10) << "COSTO TOTAL" << endl;
-    double total_consulta;
+    double total_consulta = 0.0;
     for (pos = tabla_consultas.begin(); 
          pos != tabla_consultas.end(); ++pos) {
 
@@ -62,7 +62,7 @@ void imprimir_reporte() {
         }
     }
     cout << setw(30) << "TOTAL" << setw(20) << " " << setw(15) << " "
-         << setw(10) << " " << setw(10) << total_consulta << endl;
+         << setw(10) << " " << setw(10) << fixed << total_consulta << endl;
 }
 
 int imprimir_uso() {
@@ -193,10 +193,16 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
         for (pedid_iter = pedidos.begin(); 
              pedid_iter != pedidos.end(); ++pedid_iter) {
             sockfd = conectar(puerto, hostname);
-            pedido = *pedid_iter;
+            if (sockfd < 0) {
+                cerr << "Error de conexión con el proveedor '"
+                     << proov_iter->first << "' para solicitar '"
+                     << *pedid_iter << "' " << endl;
+                continue;
+            }
+            string mensaje = "C" + *pedid_iter;
 
             bzero(buffer, 256);
-            strcpy(buffer, pedido.c_str());
+            strcpy(buffer, mensaje.c_str());
             //printf("%s\n", buffer);
 
             if (!write(sockfd, buffer, 255)) {
@@ -212,7 +218,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             }
 
             if (buffer[0] != '&') { // mensaje no vacío
-                producto* p = mensaje_a_producto(buffer, pedido, proov_iter->first);
+                producto* p = mensaje_a_producto(buffer, *pedid_iter, proov_iter->first);
                 insertar_en_tabla_consultas(p);
             }
 

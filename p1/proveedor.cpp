@@ -120,23 +120,31 @@ int main(int argc, char** argv) {
             cerr << "Error al leer" << endl;
         }
 
-        producto* p = tabla_productos[string(buffer)];
-        cout << p << endl;
+        string mensaje_recibido = string(buffer);
+        if (mensaje_recibido[0] == 'C') {
+            string nombre_producto = mensaje_recibido.substr(1, 
+                                      mensaje_recibido.length());
+            producto* p = tabla_productos[nombre_producto];
+            cout << p << endl;
 
-        if (!p) {
-            tabla_productos.erase(string(buffer));
-            bzero(buffer, 256);
-            buffer[0] = '&';
+            if (!p) {
+                tabla_productos.erase(nombre_producto);
+                bzero(buffer, 256);
+                buffer[0] = '&';
+            }
+            else {
+                stringstream s;
+                s << p->cantidad << '&' << p->precio;
+                bzero(buffer, 256);
+                strcpy(buffer, s.str().c_str());
+            }
+
+            if (!write(newsockfd, buffer, 255)) {
+                cerr << "Error al escribir" << endl;
+            }
         }
         else {
-            stringstream s;
-            s << p->cantidad << '&' << p->precio;
-            bzero(buffer, 256);
-            strcpy(buffer, s.str().c_str());
-        }
 
-        if (!write(newsockfd, buffer, 255)) {
-            cerr << "Error al escribir" << endl;
         }
 
         close(newsockfd);
