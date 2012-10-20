@@ -27,6 +27,8 @@ map<string, vendedor*> tabla_proveedores;
 map<string, priority_queue<producto, 
              vector<producto>, comparacionProductos>* > tabla_consultas;
 
+vector<producto> compra;
+
 void insertar_en_tabla_consultas(producto* p) {
     if (!tabla_consultas[p->nombre]) {
         tabla_consultas[p->nombre] = new priority_queue<producto,
@@ -35,12 +37,12 @@ void insertar_en_tabla_consultas(producto* p) {
     tabla_consultas[p->nombre]->push(*p);
 }
 
-void imprimir_reporte() {
+void generar_reporte() {
     cout.precision(2);
     cout << left;
     map<string, priority_queue<producto, 
              vector<producto>, comparacionProductos>* >::const_iterator pos;
-    cout << "CONSULTA" << endl;
+    cout << endl << "CONSULTA" << endl;
     cout << setw(30) << "PRODUCTO" << setw(20) << "PROVEEDOR" << setw(15) << "PRECIO UN."
             << setw(10) << "CANTIDAD" << setw(10) << "COSTO TOTAL" << endl;
     double total_consulta = 0.0;
@@ -49,20 +51,33 @@ void imprimir_reporte() {
 
         string nombre_producto = pos->first;
         int unidades_faltantes = tabla_pedidos[nombre_producto];
+        int unidades_pedidas;
 
         while (!pos->second->empty() && unidades_faltantes > 0) {
             cout << setw(30) << nombre_producto << setw(20);
             producto p = pos->second->top();
+
+            if (p.cantidad > tabla_pedidos[nombre_producto])
+                unidades_pedidas = tabla_pedidos[nombre_producto];
+            else
+                unidades_pedidas = p.cantidad;
+            p.cantidad = unidades_pedidas;
+
             unidades_faltantes -= p.cantidad;
+
             cout << p.nombre_vendedor << setw(15) << fixed
                  << p.precio << setw(10) << p.cantidad << setw(10) 
                  << fixed << p.cantidad * p.precio << endl;
             total_consulta += p.cantidad * p.precio;
+
+            compra.push_back(p);
+
             pos->second->pop();
         }
     }
     cout << setw(30) << "TOTAL" << setw(20) << " " << setw(15) << " "
          << setw(10) << " " << setw(10) << fixed << total_consulta << endl;
+    cout << endl;
 }
 
 int imprimir_uso() {
@@ -147,7 +162,7 @@ void inicializar_tabla_proveedores(string archivo_proveedores) {
     datos.close();
 }
 
-int conectar(int puerto, string hostname) {
+int conectar(int puerto, string direccion) {
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
@@ -156,7 +171,7 @@ int conectar(int puerto, string hostname) {
         return -1; // error abriendo el socket
     }
 
-    server = gethostbyname(hostname.c_str());
+    server = gethostbyname(direccion.c_str());
 
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET; // tipo de sockets = Internet
@@ -171,32 +186,32 @@ int conectar(int puerto, string hostname) {
 }
 
 int basico(string archivo_pedidos, string archivo_proveedores) {
+    int error = 0;
     inicializar_tabla_pedidos(archivo_pedidos);
     inicializar_tabla_proveedores(archivo_proveedores);
 
     map<string, vendedor*>::const_iterator proov_iter;
     int puerto;
-    string hostname;
+    string direccion;
+    char buffer[256];
+
     for (proov_iter = tabla_proveedores.begin(); 
          proov_iter != tabla_proveedores.end(); ++proov_iter) {
         puerto = proov_iter->second->puerto;
-        hostname = proov_iter->second->direccion;
-
-        //cout << proov_iter->first << ": " << hostname
-             //<< ", puerto " << puerto << endl;
+        direccion = proov_iter->second->direccion;
 
         vector<string>::const_iterator pedid_iter;
         string pedido;
-        char buffer[256];
 
         int sockfd;
         for (pedid_iter = pedidos.begin(); 
              pedid_iter != pedidos.end(); ++pedid_iter) {
-            sockfd = conectar(puerto, hostname);
+            sockfd = conectar(puerto, direccion);
             if (sockfd < 0) {
                 cerr << "Error de conexión con el proveedor '"
-                     << proov_iter->first << "' para solicitar '"
+                     << proov_iter->first << "' para consultar '"
                      << *pedid_iter << "' " << endl;
+                error = 1;
                 continue;
             }
             string mensaje = "C" + *pedid_iter;
@@ -216,26 +231,67 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
                 cout << "error al leer" << endl;
                 exit(1);
             }
+            cout << "[servidor <" << proov_iter->second->nombre << ">: "
+                 << string(buffer) << "]" << endl;
 
             if (buffer[0] != '&') { // mensaje no vacío
                 producto* p = mensaje_a_producto(buffer, *pedid_iter, proov_iter->first);
                 insertar_en_tabla_consultas(p);
             }
 
-            //printf("Mensaje del servidor: %s\n", buffer);
-
             close(sockfd);
         }
-        //cout << "Canal cerrado" << endl;
     }
-    imprimir_reporte();
+    generar_reporte();
 
-    return 0;
+    return error;
 }
 
 int avanzado(string archivo_pedidos, string archivo_proveedores) {
-    cout << "no implementado" << endl;
-    return 1;
+    int error = basico(archivo_pedidos, archivo_proveedores);
+
+    vector<producto>::const_iterator it;
+    int sockfd;
+    char buffer[256];
+    for (it = compra.begin(); it != compra.end(); ++it) {
+        producto p = *it;
+        vendedor* v = tabla_proveedores[p.nombre_vendedor];
+        int puerto = v->puerto;
+        string direccion = v->direccion;
+
+
+        sockfd = conectar(puerto, direccion);
+        if (sockfd < 0) {
+            cerr << "Error de conexión con el proveedor '"
+                 << p.nombre_vendedor << "' para solicitar '"
+                 << p.nombre << "' " << endl;
+            error = 1;
+            continue;
+        }
+
+        stringstream s;
+        s << p.cantidad;
+        string mensaje = "P" + p.nombre + "&" + s.str();
+
+        bzero(buffer, 256);
+        strcpy(buffer, mensaje.c_str());
+
+        if (!write(sockfd, buffer, 255)) {
+            cout << "error al escribir" << endl;
+            return -1;
+        }
+
+        bzero(buffer, 256);
+        if (!read(sockfd, buffer, 255)) {
+            cout << "error al leer" << endl;
+            exit(1);
+        }
+        cout << "[servidor <" << p.nombre_vendedor << ">: " 
+             << string(buffer) << "]" << endl;
+    }
+
+    close(sockfd);
+    return error;
 }
 
 int main(int argc, char** argv) {

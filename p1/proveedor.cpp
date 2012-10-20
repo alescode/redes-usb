@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <iomanip>
 
 #include "lib/producto.h"
 
@@ -21,16 +22,19 @@ int imprimir_uso() {
     return 1; // reportar error a la consola
 }
 
-void imprimir_tabla_productos() {
+void imprimir_inventario() {
+    cout << left;
+    cout << endl << "INVENTARIO" << endl;
+    cout << setw(30) << "PRODUCTO" << setw(10) << "CANTIDAD" << endl;
+
     map<string, producto*>::const_iterator pos;
-    cout << "{";
     for (pos = tabla_productos.begin();
          pos != tabla_productos.end(); ++pos) {
-        cout << "\"" << pos->first << "\": <";
-        cout << pos->second->cantidad << ", ";
-        cout << fixed << pos->second->precio << ">, ";
+
+        cout << setw(30) << pos->first
+             << setw(10) << pos->second->cantidad << endl;
     }
-    cout << "}" << endl;
+    cout << endl;
 }
 
 void inicializar_tabla_productos(string archivo_inventario) {
@@ -76,7 +80,7 @@ int conectar(int puerto) {
 
 void terminar(int signal) {
     close(sockfd);
-    cout << endl << "proveedor abortado" << endl;
+    cout << endl << "[servidor abortado]" << endl;
     exit(0);
 }
 
@@ -108,6 +112,7 @@ int main(int argc, char** argv) {
     struct sockaddr_in cliente;
     socklen_t clilen = sizeof(cliente);
 
+    imprimir_inventario();
     while (true) {
         int newsockfd = accept(sockfd, (struct sockaddr*) &cliente, &clilen);
         if (newsockfd < 0) {
@@ -119,13 +124,14 @@ int main(int argc, char** argv) {
         if (!read(newsockfd, buffer, 255)) {
             cerr << "Error al leer" << endl;
         }
-
         string mensaje_recibido = string(buffer);
+
+        cout << "[cliente: " << mensaje_recibido << "]" << endl;
+
         if (mensaje_recibido[0] == 'C') {
             string nombre_producto = mensaje_recibido.substr(1, 
                                       mensaje_recibido.length());
             producto* p = tabla_productos[nombre_producto];
-            cout << p << endl;
 
             if (!p) {
                 tabla_productos.erase(nombre_producto);
@@ -143,10 +149,27 @@ int main(int argc, char** argv) {
                 cerr << "Error al escribir" << endl;
             }
         }
-        else {
+        else if (mensaje_recibido[0] == 'P') {
+            string nombre_producto;
+            int cantidad_solicitada;
+            int pos_separador = mensaje_recibido.find("&");
 
+            nombre_producto = mensaje_recibido.substr(1, pos_separador - 1);
+            stringstream s(mensaje_recibido.substr(pos_separador + 1, 
+                           mensaje_recibido.length()));
+            s >> cantidad_solicitada;
+
+            tabla_productos[nombre_producto]->cantidad -= cantidad_solicitada;
+
+            bzero(buffer, 256);
+            strcpy(buffer, "OK");
+
+            if (!write(newsockfd, buffer, 255)) {
+                cerr << "Error al escribir" << endl;
+            }
+
+            imprimir_inventario();
         }
-
         close(newsockfd);
     }
 }
