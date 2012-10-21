@@ -1,6 +1,0 @@
-#Archivo de maquinas
-Tuek & 159.90.10.52 & 41138
-Yo mismo & localhost & 41138
-Waff & waff.ldc.usb.ve & 41138
-#Megan & megan.gia.usb.ve & 41138
-#Fergie & fergie.gia.usb.ve & 41138
