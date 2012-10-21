@@ -5,7 +5,7 @@ CPP = g++
 all: ordenes proveedor
 
 clean:
-	rm -f ordenes lib/*.o
+	rm -f ordenes proveedor lib/*.o
 
 %.o: %.cpp
 	$(CPP) -c $< -o $@

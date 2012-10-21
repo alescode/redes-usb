@@ -1,3 +1,10 @@
+/*
+	Proyecto 1 - CI4835
+	Autores:
+		Alejandro Machado 07-41138
+		Maria Leonor Pacheco 07-41302
+*/
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -19,6 +26,7 @@
 #include "lib/producto.h"
 #include "lib/vendedor.h"
 #include "lib/error.h"
+
 
 using namespace std;
 
