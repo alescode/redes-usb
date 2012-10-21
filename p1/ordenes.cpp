@@ -4,13 +4,16 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <queue>
+#include <iomanip>
+
+#include <netdb.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h>
-#include <errno.h>
-#include <queue>
-#include <iomanip>
+#include <strings.h>
+#include <string.h>
 
 #include "lib/string_lib.h"
 #include "lib/producto.h"

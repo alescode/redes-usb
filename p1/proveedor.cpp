@@ -3,11 +3,14 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <iomanip>
+
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <iomanip>
+#include <strings.h>
+#include <string.h>
 
 #include "lib/producto.h"
 #include "lib/error.h"
