@@ -14,7 +14,8 @@
 
 #include "lib/string_lib.h"
 #include "lib/producto.h"
-#include "lib/vendedor.cpp"
+#include "lib/vendedor.h"
+#include "lib/error.h"
 
 using namespace std;
 
@@ -37,15 +38,42 @@ void insertar_en_tabla_consultas(producto* p) {
     tabla_consultas[p->nombre]->push(*p);
 }
 
-void generar_reporte() {
+void escribir_encabezado_reporte(string tipo_reporte) {
     cout.precision(2);
     cout << left;
-    map<string, priority_queue<producto, 
-             vector<producto>, comparacionProductos>* >::const_iterator pos;
-    cout << endl << "CONSULTA" << endl;
+    cout << endl << tipo_reporte << endl;
     cout << setw(30) << "PRODUCTO" << setw(20) << "PROVEEDOR" << setw(15) << "PRECIO UN."
             << setw(10) << "CANTIDAD" << setw(10) << "COSTO TOTAL" << endl;
-    double total_consulta = 0.0;
+}
+
+void escribir_pie_reporte(double total) {
+    cout << setw(30) << "TOTAL" << setw(20) << " " << setw(15) << " "
+         << setw(10) << " " << setw(10) << fixed << total << endl;
+    cout << endl;
+}
+
+void generar_reporte_compra() {
+    escribir_encabezado_reporte("PEDIDOS SOLICITADOS");
+    double total = 0.0;
+    vector<producto>::const_iterator it;
+    for (it = compra.begin(); it != compra.end(); ++it) {
+        producto p = *it;
+
+        cout << setw(30) << p.nombre << setw(20)
+             << p.nombre_vendedor << setw(15) << fixed
+             << p.precio << setw(10) << p.cantidad << setw(10) 
+             << fixed << p.cantidad * p.precio << endl;
+        total += p.cantidad * p.precio;
+    }
+    escribir_pie_reporte(total);
+}
+
+void generar_reporte_consulta() {
+    escribir_encabezado_reporte("CONSULTA");
+
+    map<string, priority_queue<producto, 
+             vector<producto>, comparacionProductos>* >::const_iterator pos;
+    double total = 0.0;
     for (pos = tabla_consultas.begin(); 
          pos != tabla_consultas.end(); ++pos) {
 
@@ -54,7 +82,6 @@ void generar_reporte() {
         int unidades_pedidas;
 
         while (!pos->second->empty() && unidades_faltantes > 0) {
-            cout << setw(30) << nombre_producto << setw(20);
             producto p = pos->second->top();
 
             if (p.cantidad > tabla_pedidos[nombre_producto])
@@ -65,19 +92,18 @@ void generar_reporte() {
 
             unidades_faltantes -= p.cantidad;
 
-            cout << p.nombre_vendedor << setw(15) << fixed
+            cout << setw(30) << nombre_producto << setw(20)
+                 << p.nombre_vendedor << setw(15) << fixed
                  << p.precio << setw(10) << p.cantidad << setw(10) 
                  << fixed << p.cantidad * p.precio << endl;
-            total_consulta += p.cantidad * p.precio;
+            total += p.cantidad * p.precio;
 
             compra.push_back(p);
 
             pos->second->pop();
         }
     }
-    cout << setw(30) << "TOTAL" << setw(20) << " " << setw(15) << " "
-         << setw(10) << " " << setw(10) << fixed << total_consulta << endl;
-    cout << endl;
+    escribir_pie_reporte(total);
 }
 
 int imprimir_uso() {
@@ -234,7 +260,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             cout << "[servidor <" << proov_iter->second->nombre << ">: "
                  << string(buffer) << "]" << endl;
 
-            if (buffer[0] != '&') { // mensaje no vacío
+            if (buffer[0] != '0') { // mensaje no vacío
                 producto* p = mensaje_a_producto(buffer, *pedid_iter, proov_iter->first);
                 insertar_en_tabla_consultas(p);
             }
@@ -242,7 +268,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             close(sockfd);
         }
     }
-    generar_reporte();
+    generar_reporte_consulta();
 
     return error;
 }
@@ -277,7 +303,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
         strcpy(buffer, mensaje.c_str());
 
         if (!write(sockfd, buffer, 255)) {
-            cout << "error al escribir" << endl;
+            cerr << "error al escribir" << endl;
             return -1;
         }
 
@@ -291,6 +317,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
     }
 
     close(sockfd);
+    generar_reporte_compra();
     return error;
 }
 

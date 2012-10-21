@@ -10,5 +10,5 @@ clean:
 %.o: %.cpp
 	$(CPP) -c $< -o $@
 
-ordenes: lib/string_lib.o lib/producto.o
-proveedor: lib/string_lib.o lib/producto.o lib/vendedor.o
+ordenes: lib/string_lib.o lib/producto.o lib/vendedor.o lib/error.o
+proveedor: lib/string_lib.o lib/producto.o lib/vendedor.o lib/error.o

@@ -10,6 +10,7 @@
 #include <iomanip>
 
 #include "lib/producto.h"
+#include "lib/error.h"
 
 using namespace std;
 
@@ -116,7 +117,7 @@ int main(int argc, char** argv) {
     while (true) {
         int newsockfd = accept(sockfd, (struct sockaddr*) &cliente, &clilen);
         if (newsockfd < 0) {
-            cerr << "Error de conexion al aceptar" << endl;
+            imprimir_error_socket(puerto);
         }
 
         char buffer[256];
@@ -136,7 +137,7 @@ int main(int argc, char** argv) {
             if (!p) {
                 tabla_productos.erase(nombre_producto);
                 bzero(buffer, 256);
-                buffer[0] = '&';
+                buffer[0] = '0';
             }
             else {
                 stringstream s;
@@ -161,8 +162,9 @@ int main(int argc, char** argv) {
 
             tabla_productos[nombre_producto]->cantidad -= cantidad_solicitada;
 
+            string mensaje = "OK&" + nombre_producto;
             bzero(buffer, 256);
-            strcpy(buffer, "OK");
+            strcpy(buffer, mensaje.c_str());
 
             if (!write(newsockfd, buffer, 255)) {
                 cerr << "Error al escribir" << endl;

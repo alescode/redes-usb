@@ -1,9 +1,8 @@
-// Taken from:
-// http://stackoverflow.com/questions/1798112/removing-leading-and-trailing-spaces-from-a-string
-
 #include "string_lib.h"
 
 const std::string trim(const std::string& pString) {
+    // Tomado de:
+    // http://stackoverflow.com/questions/1798112/removing-leading-and-trailing-spaces-from-a-string
     const std::string pWhitespace = " \t";
     const size_t beginStr = pString.find_first_not_of(pWhitespace);
     if (beginStr == std::string::npos)
