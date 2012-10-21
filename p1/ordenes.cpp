@@ -20,22 +20,121 @@
 using namespace std;
 
 map<string, int> tabla_pedidos;
+// relaciona el nombre de cada producto a la cantidad que se desea ordenar
+
 vector<string> pedidos;
-// relaciona nombre del producto a la cantidad que se desea ordenar
+// guarda los pedidos en el mismo orden que el archivo de texto
 
 map<string, vendedor*> tabla_proveedores;
+// relaciona el nombre de cada proveedor a sus datos
 
 map<string, priority_queue<producto, 
              vector<producto>, comparacionProductos>* > tabla_consultas;
+// almacena, para cada producto, una lista de los proveedores que lo ofrecen
+// ordenada por el precio que ofrecen
 
 vector<producto> compra;
+// guarda los productos que se desean ordenar, incluyendo de qué proveedor se
+// solicitarán
 
+int imprimir_uso() {
+    cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
+        << "[archivo de proveedores]" << endl;
+    return 1;
+}
+
+/* Lee el archivo de texto que contiene los requerimientos del cliente
+ * e inicializa la estructura de datos */
+void inicializar_tabla_pedidos(string archivo_pedidos) {
+    ifstream datos;
+    datos.open(archivo_pedidos.c_str());
+
+    if (datos.is_open()) {
+        string linea;
+        string nombre_producto;
+        int cantidad_producto;
+        while (datos.good()) {
+            getline(datos, linea);
+            if (linea != "") {
+                // se llena la tabla de pedidos
+                int pos_separador = linea.find("&");
+                nombre_producto = trim(linea.substr(0, pos_separador));
+                pedidos.push_back(nombre_producto);
+                istringstream s(linea.substr(pos_separador + 1, linea.length()));
+                s >> cantidad_producto; // no se verifica formato del archivo
+
+                tabla_pedidos[nombre_producto] = cantidad_producto;
+            }
+        }
+    }
+    else {
+        cerr << "ERROR: No se pudo abrir el archivo de pedidos." << endl;
+        exit(1);
+    }
+    datos.close();
+}
+
+/* Lee el archivo de texto que contiene la lista de proveedores
+ * e inicializa la estructura de datos */
+void inicializar_tabla_proveedores(string archivo_proveedores) {
+    ifstream datos;
+    datos.open(archivo_proveedores.c_str());
+
+    if (datos.is_open()) {
+        string linea;
+        while (datos.good()) {
+            getline(datos, linea);
+            if (linea.substr(0, 1) == "#") {
+                // comentarios
+                continue;
+            }
+            if (linea != "") {
+                vendedor* v = string_a_vendedor(linea);
+                tabla_proveedores[v->nombre] = v;
+            }
+        }
+    }
+    else {
+        cerr << "ERROR: No se pudo abrir el archivo de proveedores." << endl;
+        exit(1);
+    }
+    datos.close();
+}
+
+/* inserta en la lista ordenada (cola de prioridades) la información de cada
+* producto/proveedor. Si el producto no está en la tabla, se le crea una
+* entrada */
 void insertar_en_tabla_consultas(producto* p) {
     if (!tabla_consultas[p->nombre]) {
         tabla_consultas[p->nombre] = new priority_queue<producto,
                                      vector<producto>, comparacionProductos>;
     }
     tabla_consultas[p->nombre]->push(*p);
+}
+
+/* Intenta conectarse con el servidor a través del puerto y la dirección
+ * especificados */
+int conectar(int puerto, string direccion) {
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        return -1; // error abriendo el socket
+    }
+
+    server = gethostbyname(direccion.c_str());
+
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET; // tipo de sockets = Internet
+    serv_addr.sin_addr.s_addr = ((struct in_addr *)(server->h_addr))->s_addr;
+    serv_addr.sin_port = htons(puerto);
+
+    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
+        return -2; // error de conexion
+    }
+
+    return sockfd;
 }
 
 void escribir_encabezado_reporte(string tipo_reporte) {
@@ -50,22 +149,6 @@ void escribir_pie_reporte(double total) {
     cout << setw(30) << "TOTAL" << setw(20) << " " << setw(15) << " "
          << setw(10) << " " << setw(10) << fixed << total << endl;
     cout << endl;
-}
-
-void generar_reporte_compra() {
-    escribir_encabezado_reporte("PEDIDOS SOLICITADOS");
-    double total = 0.0;
-    vector<producto>::const_iterator it;
-    for (it = compra.begin(); it != compra.end(); ++it) {
-        producto p = *it;
-
-        cout << setw(30) << p.nombre << setw(20)
-             << p.nombre_vendedor << setw(15) << fixed
-             << p.precio << setw(10) << p.cantidad << setw(10) 
-             << fixed << p.cantidad * p.precio << endl;
-        total += p.cantidad * p.precio;
-    }
-    escribir_pie_reporte(total);
 }
 
 void generar_reporte_consulta() {
@@ -106,110 +189,22 @@ void generar_reporte_consulta() {
     escribir_pie_reporte(total);
 }
 
-int imprimir_uso() {
-    cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
-        << "[archivo de proveedores]" << endl;
-    return 1;
+void generar_reporte_compra() {
+    escribir_encabezado_reporte("PEDIDOS SOLICITADOS");
+    double total = 0.0;
+    vector<producto>::const_iterator it;
+    for (it = compra.begin(); it != compra.end(); ++it) {
+        producto p = *it;
+
+        cout << setw(30) << p.nombre << setw(20)
+             << p.nombre_vendedor << setw(15) << fixed
+             << p.precio << setw(10) << p.cantidad << setw(10) 
+             << fixed << p.cantidad * p.precio << endl;
+        total += p.cantidad * p.precio;
+    }
+    escribir_pie_reporte(total);
 }
 
-void inicializar_tabla_pedidos(string archivo_pedidos) {
-    ifstream datos;
-    datos.open(archivo_pedidos.c_str());
-
-    if (datos.is_open()) {
-        string linea;
-        string nombre_producto;
-        int cantidad_producto;
-        while (datos.good()) {
-            getline(datos, linea);
-            if (linea != "") {
-                // se llena la tabla de pedidos
-                int pos_separador = linea.find("&");
-                nombre_producto = trim(linea.substr(0, pos_separador));
-                pedidos.push_back(nombre_producto);
-                istringstream s(linea.substr(pos_separador + 1, linea.length()));
-                s >> cantidad_producto; // no se verifica formato del archivo
-
-                tabla_pedidos[nombre_producto] = cantidad_producto;
-            }
-        }
-    }
-    else {
-        cerr << "ERROR: No se pudo abrir el archivo de pedidos." << endl;
-        exit(1);
-    }
-    datos.close();
-}
-
-void imprimir_tabla_pedidos() {
-    map<string, int>::const_iterator pos;
-    cout << "{";
-    for (pos = tabla_pedidos.begin(); pos != tabla_pedidos.end(); ++pos) {
-        cout << "\"" << pos->first << "\": ";
-        cout << pos->second << ", ";
-    }
-    cout << "}" << endl;
-}
-
-void imprimir_tabla_proveedores() {
-    map<string, vendedor*>::const_iterator pos;
-    cout << "{";
-    for (pos = tabla_proveedores.begin(); 
-         pos != tabla_proveedores.end(); ++pos) {
-        cout << "\"" << pos->first << "\": <";
-        cout << pos->second->direccion << ", ";
-        cout << pos->second->puerto << ">, ";
-    }
-    cout << "}" << endl;
-}
-
-void inicializar_tabla_proveedores(string archivo_proveedores) {
-    ifstream datos;
-    datos.open(archivo_proveedores.c_str());
-
-    if (datos.is_open()) {
-        string linea;
-        while (datos.good()) {
-            getline(datos, linea);
-            if (linea.substr(0, 1) == "#") {
-                // comentarios
-                continue;
-            }
-            if (linea != "") {
-                vendedor* v = string_a_vendedor(linea);
-                tabla_proveedores[v->nombre] = v;
-            }
-        }
-    }
-    else {
-        cerr << "ERROR: No se pudo abrir el archivo de proveedores." << endl;
-        exit(1);
-    }
-    datos.close();
-}
-
-int conectar(int puerto, string direccion) {
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
-
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-        return -1; // error abriendo el socket
-    }
-
-    server = gethostbyname(direccion.c_str());
-
-    bzero((char *) &serv_addr, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET; // tipo de sockets = Internet
-    serv_addr.sin_addr.s_addr = ((struct in_addr *)(server->h_addr))->s_addr;
-    serv_addr.sin_port = htons(puerto);
-
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
-        return -2; // error de conexion
-    }
-
-    return sockfd;
-}
 
 int basico(string archivo_pedidos, string archivo_proveedores) {
     int error = 0;
@@ -241,10 +236,10 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
                 continue;
             }
             string mensaje = "C" + *pedid_iter;
+            // se envía un mensaje "C" de consulta
 
             bzero(buffer, 256);
             strcpy(buffer, mensaje.c_str());
-            //printf("%s\n", buffer);
 
             if (!write(sockfd, buffer, 255)) {
                 cout << "error al escribir" << endl;
@@ -260,7 +255,8 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             cout << "[servidor <" << proov_iter->second->nombre << ">: "
                  << string(buffer) << "]" << endl;
 
-            if (buffer[0] != '0') { // mensaje no vacío
+            if (buffer[0] != '0') {
+                // si el proveedor tiene el producto se almacenan los datos
                 producto* p = mensaje_a_producto(buffer, *pedid_iter, proov_iter->first);
                 insertar_en_tabla_consultas(p);
             }
@@ -274,11 +270,14 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 }
 
 int avanzado(string archivo_pedidos, string archivo_proveedores) {
+    // primero se ejecuta una consulta
     int error = basico(archivo_pedidos, archivo_proveedores);
 
     vector<producto>::const_iterator it;
     int sockfd;
     char buffer[256];
+
+    // ya se tiene la orden de compra, se lleva a cabo
     for (it = compra.begin(); it != compra.end(); ++it) {
         producto p = *it;
         vendedor* v = tabla_proveedores[p.nombre_vendedor];
@@ -298,6 +297,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
         stringstream s;
         s << p.cantidad;
         string mensaje = "P" + p.nombre + "&" + s.str();
+        // se envía un mensaje "P" de pedido
 
         bzero(buffer, 256);
         strcpy(buffer, mensaje.c_str());

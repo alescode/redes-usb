@@ -14,8 +14,11 @@
 
 using namespace std;
 
+/* Relaciona el nombre de cada producto con 
+ * sus datos en el inventario */
 map<string, producto*> tabla_productos;
 
+// socket file descriptor
 int sockfd;
 
 int imprimir_uso() {
@@ -38,6 +41,8 @@ void imprimir_inventario() {
     cout << endl;
 }
 
+/* Lee el archivo de texto que contiene los datos del inventario
+ * e inicializa la estructura de datos */
 void inicializar_tabla_productos(string archivo_inventario) {
     ifstream datos;
     datos.open(archivo_inventario.c_str());
@@ -63,6 +68,7 @@ void inicializar_tabla_productos(string archivo_inventario) {
     datos.close();
 }
 
+/* Establece una conexión al puerto como servidor */
 int conectar(int puerto) {
     struct sockaddr_in servidor;
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -79,6 +85,7 @@ int conectar(int puerto) {
     return sockfd;
 }
 
+/* Finaliza el servidor apropiadamente luego de recibir SIGINT (CTRL-C) */
 void terminar(int signal) {
     close(sockfd);
     cout << endl << "[servidor abortado]" << endl;
@@ -86,14 +93,12 @@ void terminar(int signal) {
 }
 
 int main(int argc, char** argv) {
-    signal(SIGINT, terminar);
+    signal(SIGINT, terminar); // escucha la señal SIGINT
 
     if (argc != 5) {
         return imprimir_uso();
     }
-    cout.precision(2);
 
-    string uso = string(argv[1]);
     string archivo_inventario = string(argv[2]);
 
     int puerto;
@@ -118,7 +123,9 @@ int main(int argc, char** argv) {
         int newsockfd = accept(sockfd, (struct sockaddr*) &cliente, &clilen);
         if (newsockfd < 0) {
             imprimir_error_socket(puerto);
+            exit(1);
         }
+        // se ha establecido una conexión
 
         char buffer[256];
         bzero(buffer, 256);
@@ -129,19 +136,23 @@ int main(int argc, char** argv) {
 
         cout << "[cliente: " << mensaje_recibido << "]" << endl;
 
+        /* El primer caracter del mensaje codifica si se está realizando una
+         * consulta (C) o un pedido (P) */
+
         if (mensaje_recibido[0] == 'C') {
             string nombre_producto = mensaje_recibido.substr(1, 
                                       mensaje_recibido.length());
             producto* p = tabla_productos[nombre_producto];
 
-            if (!p) {
+            if (!p) { // no existe tal producto
                 tabla_productos.erase(nombre_producto);
                 bzero(buffer, 256);
-                buffer[0] = '0';
+                buffer[0] = '0'; // se envía la cantidad en el inventario (0)
             }
             else {
                 stringstream s;
                 s << p->cantidad << '&' << p->precio;
+                // se envía la cantidad en el inventario y el precio
                 bzero(buffer, 256);
                 strcpy(buffer, s.str().c_str());
             }
@@ -160,9 +171,20 @@ int main(int argc, char** argv) {
                            mensaje_recibido.length()));
             s >> cantidad_solicitada;
 
-            tabla_productos[nombre_producto]->cantidad -= cantidad_solicitada;
+            string mensaje;
+            if (tabla_productos[nombre_producto]->cantidad 
+                    >= cantidad_solicitada) {
+                tabla_productos[nombre_producto]->cantidad -= cantidad_solicitada;
+                mensaje = "OK&" + nombre_producto;
+                // se acepta la compra
+            }
+            else {
+                mensaje = "NO&" + nombre_producto;
+                /* se rechaza la compra
+                 si el cliente realizó la consulta correctamente antes del
+                 pedido, esto no debería ocurrir */
+            }
 
-            string mensaje = "OK&" + nombre_producto;
             bzero(buffer, 256);
             strcpy(buffer, mensaje.c_str());
 
