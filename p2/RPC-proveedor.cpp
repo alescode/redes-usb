@@ -22,6 +22,8 @@
 
 #include "lib/producto.h"
 
+#include "inventario.h"
+
 #include <rpc/rpc.h>        
 #include "proveedor.h" /* este archivo es generado por rpcgen */
 
@@ -30,10 +32,10 @@ using namespace std;
 /* Relaciona el nombre de cada producto con 
  * sus datos en el inventario */
 map<string, producto*> tabla_productos;
-string archivo_inventario = "prueba.txt";
+string archivo_inventario = INVENTARIO;
 
-void * imprimir_inventario_1_svc( void * nada, struct svc_req *req) {
-	void * bla;
+int * imprimir_inventario_1_svc( void * nada, struct svc_req *req) {
+	static int error = 0;
     cout << left;
     cout << endl << "INVENTARIO" << endl;
     cout << setw(30) << "PRODUCTO" << setw(10) << "CANTIDAD" << endl;
@@ -46,13 +48,13 @@ void * imprimir_inventario_1_svc( void * nada, struct svc_req *req) {
              << setw(10) << pos->second->cantidad << endl;
     }
     cout << endl;
-	return bla;
+	return &error;
 }
 
 /* Lee el archivo de texto que contiene los datos del inventario
  * e inicializa la estructura de datos */
-void * inicializar_tabla_productos_1_svc( void * nada, struct svc_req *req) {
-	void * bla; 
+int * inicializar_tabla_productos_1_svc( void * nada, struct svc_req *req) {
+	static int error = 0; 
     ifstream datos;
     datos.open(archivo_inventario.c_str());
 
@@ -71,17 +73,18 @@ void * inicializar_tabla_productos_1_svc( void * nada, struct svc_req *req) {
         }
     }
     else {
+		error = -1; 
         cerr << "ERROR: No se pudo abrir el archivo de productos." << endl;
         exit(1);
     }
     datos.close();
-	return bla;
+	return &error;
 }
 
 /* Actualiza el archivo de texto de los datos del inventario
  * con el estado actual de la estructura de datos */
-void * actualizar_inventario_1_svc( void * nada, struct svc_req *req) {
-	void * bla;
+int * actualizar_inventario_1_svc( void * nada, struct svc_req *req) {
+	int error = 0;
 	ofstream datos;
 	datos.open(archivo_inventario.c_str()); 
 	string linea; 
@@ -103,16 +106,18 @@ void * actualizar_inventario_1_svc( void * nada, struct svc_req *req) {
 			datos << linea; 
 		}
 	} else  {
+		error = -1;
         cerr << "ERROR: No se pudo abrir el archivo de productos." << endl;
         exit(1);
     }
     datos.close();
-	return bla;
+	return &error;
 }
 
 /* Envia el mensaje de respuesta a la consulta  */
 char **consultar_inventario_1_svc(char **nombre, struct svc_req *req){
 	string nombre_producto = *nombre;
+	cout << "consultando: " << endl; 
 	static char * mensaje; 
 	producto* p = tabla_productos[nombre_producto];
 	
@@ -132,18 +137,22 @@ char **consultar_inventario_1_svc(char **nombre, struct svc_req *req){
 }
 
 char **realizar_pedido_1_svc(char **pedido, struct svc_req *req) {
-	string mensaje_recibido = string(*pedido); 
+	string mensaje_recibido = *pedido; 
 	string nombre_producto;
 	int cantidad_solicitada;
 	int pos_separador = mensaje_recibido.find("&");
 	string aux; 
 
-	nombre_producto = mensaje_recibido.substr(1, pos_separador - 1);
-	stringstream s(mensaje_recibido.substr(pos_separador + 1, 
+	nombre_producto = mensaje_recibido.substr(0, pos_separador);
+	stringstream s(mensaje_recibido.substr(pos_separador+1, 
+                           mensaje_recibido.length()));
+
+	string cant = (mensaje_recibido.substr(pos_separador+1, 
                            mensaje_recibido.length()));
 	s >> cantidad_solicitada;
 
 	static char * mensaje;
+
 	if (tabla_productos[nombre_producto]->cantidad 
 		>= cantidad_solicitada) {
 

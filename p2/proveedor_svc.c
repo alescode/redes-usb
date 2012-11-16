@@ -3,7 +3,7 @@
  * It was generated using rpcgen.
  */
 
-#include "date.h"
+#include "proveedor.h"
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -66,12 +66,13 @@ closedown()
 }
 
 static void
-date_prog_1(rqstp, transp)
+proveedor_prog_1(rqstp, transp)
 	struct svc_req *rqstp;
 	SVCXPRT *transp;
 {
 	union {
-		long str_date_1_arg;
+		char *consultar_inventario_1_arg;
+		char *realizar_pedido_1_arg;
 	} argument;
 	char *result;
 	bool_t (*xdr_argument)(), (*xdr_result)();
@@ -84,16 +85,34 @@ date_prog_1(rqstp, transp)
 		_rpcsvcdirty = 0;
 		return;
 
-	case BIN_DATE:
+	case IMPRIMIR_INVENTARIO:
 		xdr_argument = xdr_void;
-		xdr_result = xdr_long;
-		local = (char *(*)()) bin_date_1_svc;
+		xdr_result = xdr_int;
+		local = (char *(*)()) imprimir_inventario_1_svc;
 		break;
 
-	case STR_DATE:
-		xdr_argument = xdr_long;
+	case INICIALIZAR_TABLA_PRODUCTOS:
+		xdr_argument = xdr_void;
+		xdr_result = xdr_int;
+		local = (char *(*)()) inicializar_tabla_productos_1_svc;
+		break;
+
+	case ACTUALIZAR_INVENTARIO:
+		xdr_argument = xdr_void;
+		xdr_result = xdr_int;
+		local = (char *(*)()) actualizar_inventario_1_svc;
+		break;
+
+	case CONSULTAR_INVENTARIO:
+		xdr_argument = xdr_wrapstring;
 		xdr_result = xdr_wrapstring;
-		local = (char *(*)()) str_date_1_svc;
+		local = (char *(*)()) consultar_inventario_1_svc;
+		break;
+
+	case REALIZAR_PEDIDO:
+		xdr_argument = xdr_wrapstring;
+		xdr_result = xdr_wrapstring;
+		local = (char *(*)()) realizar_pedido_1_svc;
 		break;
 
 	default:
@@ -143,7 +162,7 @@ char *argv[];
 		sock = 0;
 		_rpcpmstart = 1;
 		proto = 0;
-		openlog("date", LOG_PID, LOG_DAEMON);
+		openlog("proveedor", LOG_PID, LOG_DAEMON);
 	} else {
 #ifndef RPC_SVC_FG
 		int size;
@@ -167,10 +186,10 @@ char *argv[];
 			(void) ioctl(i, TIOCNOTTY, (char *)NULL);
 			(void) close(i);
 		}
-		openlog("date", LOG_PID, LOG_DAEMON);
+		openlog("proveedor", LOG_PID, LOG_DAEMON);
 #endif
 		sock = RPC_ANYSOCK;
-		(void) pmap_unset(DATE_PROG, DATE_VERS);
+		(void) pmap_unset(PROVEEDOR_PROG, PROVEEDOR_VERS);
 	}
 
 	if ((_rpcfdtype == 0) || (_rpcfdtype == SOCK_DGRAM)) {
@@ -181,8 +200,8 @@ char *argv[];
 		}
 		if (!_rpcpmstart)
 			proto = IPPROTO_UDP;
-		if (!svc_register(transp, DATE_PROG, DATE_VERS, date_prog_1, proto)) {
-			_msgout("unable to register (DATE_PROG, DATE_VERS, udp).");
+		if (!svc_register(transp, PROVEEDOR_PROG, PROVEEDOR_VERS, proveedor_prog_1, proto)) {
+			_msgout("unable to register (PROVEEDOR_PROG, PROVEEDOR_VERS, udp).");
 			exit(1);
 		}
 	}
@@ -198,8 +217,8 @@ char *argv[];
 		}
 		if (!_rpcpmstart)
 			proto = IPPROTO_TCP;
-		if (!svc_register(transp, DATE_PROG, DATE_VERS, date_prog_1, proto)) {
-			_msgout("unable to register (DATE_PROG, DATE_VERS, tcp).");
+		if (!svc_register(transp, PROVEEDOR_PROG, PROVEEDOR_VERS, proveedor_prog_1, proto)) {
+			_msgout("unable to register (PROVEEDOR_PROG, PROVEEDOR_VERS, tcp).");
 			exit(1);
 		}
 	}

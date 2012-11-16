@@ -90,6 +90,7 @@ void inicializar_tabla_pedidos(string archivo_pedidos) {
 /* Lee el archivo de texto que contiene la lista de proveedores
  * e inicializa la estructura de datos */
 void inicializar_tabla_proveedores(string archivo_proveedores) {
+	cout << archivo_proveedores << endl; 
     ifstream datos;
     datos.open(archivo_proveedores.c_str());
 
@@ -198,7 +199,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 
 	int error = 0;
 	CLIENT *cl;        	 	/* manejo de RPC */
-	void *inv; 
+	int *inv; 
     char *servidor;      	/* hostname */
     char **resp_consulta;   /* valor de retorno de la consulta */
 
@@ -213,6 +214,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 		string hostname = proov_iter->second->direccion.c_str();
         servidor = new char[hostname.length()+1]; 
 		strcpy(servidor, hostname.c_str());
+		cout << "Conectar con: " << servidor << endl;
 
 		/* manejo de conexion con el cliente */
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
@@ -268,6 +270,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 	CLIENT *cl;        	 	/* manejo de RPC */
     char *servidor;      	/* hostname */
     char **resp_pedido;     /* valor de retorno del pedido */
+	int *inv; 
 
     // primero se ejecuta una consulta
     int error = basico(archivo_pedidos, archivo_proveedores);
@@ -276,11 +279,14 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 
     // ya se tiene la orden de compra, se lleva a cabo
     for (it = compra.begin(); it != compra.end(); ++it) {
+
         producto p = *it;
         vendedor* v = tabla_proveedores[p.nombre_vendedor];
 		
 		char * servidor = new char[(v->direccion).length()+1];
 		strcpy(servidor, v->direccion.c_str());
+
+		cout << "Conectando con: " << servidor << endl; 
 
 		/* manejo de conexion con el cliente */
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
@@ -298,12 +304,20 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 		char * pedido = new char[mensaje.length()+1];
 		strcpy(pedido, mensaje.c_str());
 
+		cout << "Realizar pedido: " << pedido << endl; 
+
 		if ((resp_pedido = realizar_pedido_1(&pedido, cl))==NULL){
 			error = -1;
 			cerr << "Error al realizar el pedido" << endl;
 		}
 
 		free(pedido);
+
+		if  ((inv = actualizar_inventario_1(NULL, cl))==NULL){
+			error = -1;
+			cerr << "Error al realizar el pedido" << endl;
+		}
+
 		clnt_destroy(cl);  
 
  	}
