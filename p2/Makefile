@@ -5,7 +5,7 @@ CPP = g++
 all: RPC-ordenes RPC-proveedor
 
 clean:
-	rm -f RPC-ordenes RPC-proveedor lib/*.o *.o 
+	rm -f RPC-ordenes RPC-proveedor lib/*.o *.o  
 
 %.o: %.cpp
 	$(CPP) -c $< -o $@ -w
