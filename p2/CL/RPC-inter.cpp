@@ -5,7 +5,6 @@
 		Maria Leonor Pacheco 07-41302
 */
 
-
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -23,61 +22,14 @@
 #include "lib/producto.h"
 #include "lib/error.h"
 
-
 using namespace std;
-
-/* Relaciona el nombre de cada producto con 
- * sus datos en el inventario */
-map<string, producto*> tabla_productos;
 
 // socket file descriptor
 int sockfd;
 
 int imprimir_uso() {
-    cerr << "Uso: proveedor -f [archivo de inventario] -p [puerto]" << endl;
+    cerr << "Uso: RPC-inter -d [proveedores] -p [puerto]" << endl;
     return 1; // reportar error a la consola
-}
-
-void imprimir_inventario() {
-    cout << left;
-    cout << endl << "INVENTARIO" << endl;
-    cout << setw(30) << "PRODUCTO" << setw(10) << "CANTIDAD" << endl;
-
-    map<string, producto*>::const_iterator pos;
-    for (pos = tabla_productos.begin();
-         pos != tabla_productos.end(); ++pos) {
-
-        cout << setw(30) << pos->first
-             << setw(10) << pos->second->cantidad << endl;
-    }
-    cout << endl;
-}
-
-/* Lee el archivo de texto que contiene los datos del inventario
- * e inicializa la estructura de datos */
-void inicializar_tabla_productos(string archivo_inventario) {
-    ifstream datos;
-    datos.open(archivo_inventario.c_str());
-
-    if (datos.is_open()) {
-        string linea;
-        while (datos.good()) {
-            getline(datos, linea);
-            if (linea.substr(0, 1) == "#") {
-                // comentarios
-                continue;
-            }
-            if (linea != "") {
-                producto* p = cargar_producto(linea);
-                tabla_productos[p->nombre] = p;
-            }
-        }
-    }
-    else {
-        cerr << "ERROR: No se pudo abrir el archivo de productos." << endl;
-        exit(1);
-    }
-    datos.close();
 }
 
 /* Establece una conexión al puerto como servidor */
@@ -111,13 +63,9 @@ int main(int argc, char** argv) {
         return imprimir_uso();
     }
 
-    string archivo_inventario = string(argv[2]);
-
     int puerto;
     istringstream s(argv[4]);
     s >> puerto;
-
-    inicializar_tabla_productos(archivo_inventario);
 
     int sockfd;
     sockfd = conectar(puerto);
@@ -130,7 +78,6 @@ int main(int argc, char** argv) {
     struct sockaddr_in cliente;
     socklen_t clilen = sizeof(cliente);
 
-    imprimir_inventario();
     while (true) {
         int newsockfd = accept(sockfd, (struct sockaddr*) &cliente, &clilen);
         if (newsockfd < 0) {
@@ -151,6 +98,7 @@ int main(int argc, char** argv) {
         /* El primer caracter del mensaje codifica si se está realizando una
          * consulta (C) o un pedido (P) */
 
+#if 0
         if (mensaje_recibido[0] == 'C') {
             string nombre_producto = mensaje_recibido.substr(1, 
                                       mensaje_recibido.length());
@@ -196,16 +144,8 @@ int main(int argc, char** argv) {
                  si el cliente realizó la consulta correctamente antes del
                  pedido, esto no debería ocurrir */
             }
-
-            bzero(buffer, 256);
-            strcpy(buffer, mensaje.c_str());
-
-            if (!write(newsockfd, buffer, 255)) {
-                cerr << "Error al escribir" << endl;
-            }
-
-            imprimir_inventario();
         }
+#endif
         close(newsockfd);
     }
 }
