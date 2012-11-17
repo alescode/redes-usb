@@ -1,11 +1,11 @@
 .PHONY: all clean
 
-CPP = g++ 
+CPP = g++
 
 all: RPC-ordenes RPC-proveedor
 
 clean:
-	rm -f RPC-ordenes RPC-proveedor lib/*.o *.o  
+	rm -f RPC-ordenes RPC-proveedor lib/*.o *.o proveedor_clnt.c proveedor_svc.c proveedor.h
 
 %.o: %.cpp
 	$(CPP) -c $< -o $@ -w

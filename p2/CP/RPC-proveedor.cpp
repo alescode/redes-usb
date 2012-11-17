@@ -84,7 +84,7 @@ int * inicializar_tabla_productos_1_svc( void * nada, struct svc_req *req) {
 /* Actualiza el archivo de texto de los datos del inventario
  * con el estado actual de la estructura de datos */
 int * actualizar_inventario_1_svc( void * nada, struct svc_req *req) {
-	int error = 0;
+	static int error = 0;
 	ofstream datos;
 	datos.open(archivo_inventario.c_str()); 
 	string linea; 
@@ -123,7 +123,9 @@ char **consultar_inventario_1_svc(char **nombre, struct svc_req *req){
 	
 	if (!p) { // no existe tal producto
     	tabla_productos.erase(nombre_producto);
+		mensaje = new char[2];
 		mensaje[0] = '0'; // se envía la cantidad en el inventario (0)
+		mensaje[1] = 0;
 		return &mensaje; 
 	} else {
 		stringstream s;
