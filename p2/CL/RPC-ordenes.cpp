@@ -49,8 +49,8 @@ vector<producto> compra;
 // solicitarán
 
 int imprimir_uso() {
-    cerr << "Uso: ordenes -[a|b] -f [archivo de pedidos] -d "
-        << "[archivo de proveedores]" << endl;
+    cerr << "Uso: RPC-ordenes -f [archivo de pedidos] -m "
+        << "[maq_inter]" << endl;
     return 1;
 }
 
@@ -216,138 +216,61 @@ void generar_reporte_compra() {
     escribir_pie_reporte(total);
 }
 
+int main(int argc, char** argv) {
+    if (argc != 5) {
+        return imprimir_uso();
+    }
 
-int basico(string archivo_pedidos, string archivo_proveedores) {
+    string archivo_pedidos = string(argv[2]);
+    string archivo_intermedio = string(argv[4]);
+
     int error = 0;
     inicializar_tabla_pedidos(archivo_pedidos);
-    inicializar_tabla_proveedores(archivo_proveedores);
 
-    map<string, vendedor*>::const_iterator proov_iter;
-    int puerto;
-    string direccion;
+    int puerto = 41138;
+    string direccion = "localhost";
     char buffer[256];
 
-    for (proov_iter = tabla_proveedores.begin(); 
-         proov_iter != tabla_proveedores.end(); ++proov_iter) {
-        puerto = proov_iter->second->puerto;
-        direccion = proov_iter->second->direccion;
+    map<string, int>::const_iterator pedid_iter;
+    string nombre_pedido;
+    string cantidad_pedido;
 
-        vector<string>::const_iterator pedid_iter;
-        string pedido;
-
-        int sockfd;
-        for (pedid_iter = pedidos.begin(); 
-             pedid_iter != pedidos.end(); ++pedid_iter) {
-            sockfd = conectar(puerto, direccion);
-            if (sockfd < 0) {
-                cerr << "Error de conexión con el proveedor '"
-                     << proov_iter->first << "' para consultar '"
-                     << *pedid_iter << "' " << endl;
-                error = 1;
-                continue;
-            }
-            string mensaje = "C" + *pedid_iter;
-            // se envía un mensaje "C" de consulta
-
-            bzero(buffer, 256);
-            strcpy(buffer, mensaje.c_str());
-
-            if (!write(sockfd, buffer, 255)) {
-                cout << "error al escribir" << endl;
-                return -1;
-            }
-
-            bzero(buffer, 256);
-
-            if (!read(sockfd, buffer, 255)) {
-                cout << "error al leer" << endl;
-                exit(1);
-            }
-            cout << "[servidor <" << proov_iter->second->nombre << ">: "
-                 << string(buffer) << "]" << endl;
-
-            if (buffer[0] != '0') {
-                // si el proveedor tiene el producto se almacenan los datos
-                producto* p = mensaje_a_producto(buffer, *pedid_iter, proov_iter->first);
-                insertar_en_tabla_consultas(p);
-            }
-
-            close(sockfd);
-        }
-    }
-    generar_reporte_consulta();
-
-    return error;
-}
-
-int avanzado(string archivo_pedidos, string archivo_proveedores) {
-    // primero se ejecuta una consulta
-    int error = basico(archivo_pedidos, archivo_proveedores);
-
-    vector<producto>::const_iterator it;
     int sockfd;
-    char buffer[256];
-
-    // ya se tiene la orden de compra, se lleva a cabo
-    for (it = compra.begin(); it != compra.end(); ++it) {
-        producto p = *it;
-        vendedor* v = tabla_proveedores[p.nombre_vendedor];
-        int puerto = v->puerto;
-        string direccion = v->direccion;
-
-
+    for (pedid_iter = tabla_pedidos.begin(); 
+            pedid_iter != tabla_pedidos.end(); ++pedid_iter) {
         sockfd = conectar(puerto, direccion);
         if (sockfd < 0) {
-            cerr << "Error de conexión con el proveedor '"
-                 << p.nombre_vendedor << "' para solicitar '"
-                 << p.nombre << "' " << endl;
+            cerr << "Error de conexión con el intermediario" << endl;
             error = 1;
             continue;
         }
 
         stringstream s;
-        s << p.cantidad;
-        string mensaje = "P" + p.nombre + "&" + s.str();
-        // se envía un mensaje "P" de pedido
+        s << pedid_iter->second;
+        cantidad_pedido = s.str();
+
+        nombre_pedido = pedid_iter->first + "&" + cantidad_pedido;
 
         bzero(buffer, 256);
-        strcpy(buffer, mensaje.c_str());
+        strcpy(buffer, nombre_pedido.c_str());
 
         if (!write(sockfd, buffer, 255)) {
-            cerr << "error al escribir" << endl;
+            cout << "error al escribir" << endl;
             return -1;
         }
 
         bzero(buffer, 256);
+
         if (!read(sockfd, buffer, 255)) {
             cout << "error al leer" << endl;
             exit(1);
         }
-        cout << "[servidor <" << p.nombre_vendedor << ">: " 
-             << string(buffer) << "]" << endl;
-    }
+        cout << "[servidor <" << string(buffer) << "]" << endl;
 
-    close(sockfd);
-    generar_reporte_compra();
-    return error;
+        if (buffer[0] != '0') {
+        }
+
+        close(sockfd);
+    }
 }
 
-int main(int argc, char** argv) {
-    if (argc != 6) {
-        return imprimir_uso();
-    }
-
-    string uso = string(argv[1]);
-    string archivo_pedidos = string(argv[3]);
-    string archivo_proveedores = string(argv[5]);
-
-    if (uso == "-a") {
-        return avanzado(archivo_pedidos, archivo_proveedores);
-    }
-    else if (uso == "-b") {
-        return basico(archivo_pedidos, archivo_proveedores);
-    }
-    else {
-        return imprimir_uso();
-    }
-}
