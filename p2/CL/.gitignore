@@ -1,3 +1,7 @@
 RPC-inter
 RPC-proveedor
 RPC-ordenes
+proveedor_clnt.c
+proveedor_svc.c
+*.x
+proveedor.h

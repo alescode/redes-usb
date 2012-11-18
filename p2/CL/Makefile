@@ -12,6 +12,5 @@ clean:
 	$(CPP) -c $< -o $@ -w
 
 RPC-ordenes: lib/error.o lib/string_lib.o lib/producto.o lib/vendedor.o
-# falta proveedor_clnt.o 
-RPC-inter: lib/error.o lib/string_lib.o lib/producto.o lib/vendedor.o
-#RPC-proveedor: proveedor_svc.o lib/string_lib.o lib/producto.o lib/vendedor.o
+RPC-inter: lib/error.o lib/string_lib.o lib/producto.o lib/vendedor.o proveedor_clnt.o 
+RPC-proveedor: proveedor_svc.o lib/string_lib.o lib/producto.o lib/vendedor.o
