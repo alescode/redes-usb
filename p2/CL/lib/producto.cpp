@@ -2,6 +2,13 @@
 
 using namespace std;
 
+producto::producto() {
+            nombre = "";
+            cantidad = 0;
+            precio = 0;
+            nombre_vendedor = "";
+}
+
 producto::producto(string n, int c, double p, string v = "") {
             nombre = n;
             cantidad = c;

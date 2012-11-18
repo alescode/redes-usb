@@ -13,6 +13,7 @@ class producto {
         double precio;
         string nombre_vendedor;
 
+        producto();
         producto(string n, int c, double p, string v);
 };
 
