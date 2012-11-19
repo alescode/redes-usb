@@ -1,4 +1,7 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 
-const std::string trim(const std::string& pString);
+using namespace std;
+
+const string trim(const string& pString);
