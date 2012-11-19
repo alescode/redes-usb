@@ -48,6 +48,7 @@ priority_queue<producto, vector<producto>, comparacionProductos>* consulta;
 
 producto compra; 
 
+
 int imprimir_uso() {
     cerr << "Uso: RPC-inter -d [proveedores] -p [puerto]" << endl;
     return 1; // reportar error a la consola
@@ -87,7 +88,6 @@ void inicializar_tabla_pedidos(string archivo_pedidos) {
 /* Lee el archivo de texto que contiene la lista de proveedores
  * e inicializa la estructura de datos */
 void inicializar_tabla_proveedores(string archivo_proveedores) {
-	cout << archivo_proveedores << endl; 
     ifstream datos;
     datos.open(archivo_proveedores.c_str());
 
@@ -151,6 +151,7 @@ void escribir_pie_reporte(double total) {
 }
 
 int basico(string pedido, string archivo_proveedores) {
+
 	int error = 0;
     CLIENT *cl;                 /* manejo de RPC */
     int *inv; 
@@ -191,6 +192,8 @@ int basico(string pedido, string archivo_proveedores) {
         char * texto_consulta = new char[(pedido).length()+1];
         strcpy(texto_consulta, (pedido).c_str());
 
+		cout << "Consultando: " << texto_consulta << endl; 
+
         if ((resp_consulta = consultar_inventario_1(&texto_consulta, cl))==NULL){
             cerr << "Error al realizar la consulta" << endl;
             error = -1;
@@ -200,13 +203,17 @@ int basico(string pedido, string archivo_proveedores) {
 
         if (*resp_consulta[0] != '0') {
             // si el proveedor tiene el producto se almacenan los datos
-            producto* p = mensaje_a_producto(*resp_consulta, *pedid_iter, proov_iter->first);
+            producto* p = mensaje_a_producto(*resp_consulta, pedido, proov_iter->first);
             consulta->push(*p);
         }
         clnt_destroy(cl);         /* finalizo la conexion con el cliente */
     }
-
-    compra = consulta->top();
+	if (!consulta->empty()){
+    	compra = consulta->top();
+	} else {
+		error = -1; 
+		return error; 
+	}
 
     return error;
 }
@@ -218,8 +225,13 @@ int avanzado(string mensaje, string archivo_proveedores) {
     char **resp_pedido;     /* valor de retorno del pedido */
     int *inv; 
 
+	int pos_separador = mensaje.find("&");
+	string nombre_producto = mensaje.substr(0, pos_separador);
+
     // primero se ejecuta una consulta y se obtiene el producto al mejor precio
-    error = basico(mensaje, archivo_proveedores);
+    if ((error = basico(nombre_producto, archivo_proveedores)) < 0){
+		return error; 
+	}
 
     vendedor* v = tabla_proveedores[compra.nombre_vendedor];
 
@@ -303,7 +315,11 @@ int main(int argc, char** argv) {
 
 		close(newsockfd);
 
+
 		avanzado(mensaje_recibido, archivo_proveedores);
+
+
+		cout << "Comprar: " << compra.nombre << " " << compra.cantidad << " " << compra.precio << " " << compra.nombre_vendedor << endl; 
 
   		
     }

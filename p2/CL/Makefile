@@ -3,7 +3,7 @@
 CPP = g++
 
 #falta RPC-proveedor
-all: RPC-ordenes RPC-inter 
+all: RPC-ordenes RPC-inter RPC-proveedor
 
 clean:
 	rm -f RPC-ordenes RPC-inter RPC-proveedor lib/*.o *.o proveedor_clnt.c proveedor_svc.c proveedor.h

@@ -34,6 +34,7 @@ using namespace std;
 map<string, producto*> tabla_productos;
 string archivo_inventario = INVENTARIO;
 
+
 int * imprimir_inventario_1_svc( void * nada, struct svc_req *req) {
 	static int error = 0;
     cout << left;
@@ -117,7 +118,6 @@ int * actualizar_inventario_1_svc( void * nada, struct svc_req *req) {
 /* Envia el mensaje de respuesta a la consulta  */
 char **consultar_inventario_1_svc(char **nombre, struct svc_req *req){
 	string nombre_producto = *nombre;
-	cout << "consultando: " << endl; 
 	static char * mensaje; 
 	producto* p = tabla_productos[nombre_producto];
 	
