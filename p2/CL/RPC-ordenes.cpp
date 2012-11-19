@@ -261,15 +261,14 @@ int main(int argc, char** argv) {
 
         bzero(buffer, 256);
 
-        /*if (!read(sockfd, buffer, 255)) {
+        if (!read(sockfd, buffer, 255)) {
             cout << "error al leer" << endl;
             exit(1);
         }
         cout << "[servidor <" << string(buffer) << "]" << endl;
-        */
 
-        if (buffer[0] != '0') {
-        }
+      //  if (buffer[0] != '0') {
+      //  }
 
         close(sockfd);
     }
