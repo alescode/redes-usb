@@ -267,6 +267,10 @@ int main(int argc, char** argv) {
         }
         cout << "[maq_inter: " << string(buffer) << "]" << endl;
 
+        if (buffer[0] != '0') {
+            continue;
+        }
+
         int numero_compras;
         char** compras = split(buffer, &numero_compras, (char*) "|");
         for (int i = 0; i < numero_compras; i++) {
@@ -278,9 +282,6 @@ int main(int argc, char** argv) {
             producto p = producto(pedid_iter->first, cant, precio, productos[0]);
             compra.push_back(p);
         }
-
-      //  if (buffer[0] != '0') {
-      //  }
 
         close(sockfd);
     }
