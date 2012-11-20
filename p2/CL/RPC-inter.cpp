@@ -133,7 +133,7 @@ int conectar(int puerto) {
 /* Finaliza el servidor apropiadamente luego de recibir SIGINT (CTRL-C) */
 void terminar(int signal) {
     close(sockfd);
-    cout << endl << "[servidor abortado]" << endl;
+    cout << endl << "[maq_inter abortado]" << endl;
     exit(0);
 }
 
@@ -153,23 +153,23 @@ void escribir_pie_reporte(double total) {
 
 int basico(string pedido, string archivo_proveedores) {
 
-	int error = 0;
+    int error = 0;
     CLIENT *cl;                 /* manejo de RPC */
     int *inv; 
     char *servidor;          /* hostname */
     char **resp_consulta;   /* valor de retorno de la consulta */
     consulta = new priority_queue<producto, vector<producto>, comparacionProductos>;
-	
-	// servirse de mas de un proveedor para satisfacer pedido
-	int cantidad_solicitada; 
-	int cantidad_acumulada = 0; 
+    
+    // servirse de mas de un proveedor para satisfacer pedido
+    int cantidad_solicitada; 
+    int cantidad_acumulada = 0; 
 
 
-	int pos_separador = pedido.find("&");
-	string nombre_producto = pedido.substr(0, pos_separador);
-	stringstream s(pedido.substr(pos_separador+1, 
+    int pos_separador = pedido.find("&");
+    string nombre_producto = pedido.substr(0, pos_separador);
+    stringstream s(pedido.substr(pos_separador+1, 
                            pedido.length()));
-	s >> cantidad_solicitada;
+    s >> cantidad_solicitada;
 
 
 
@@ -188,7 +188,7 @@ int basico(string pedido, string archivo_proveedores) {
         if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, (char*)"udp")) == NULL) {
             cerr << "Error de conexión con el proveedor '" << proov_iter->first << endl;
             delete servidor;
-			error = -1;
+            error = -1;
             continue;
         }
 
@@ -196,7 +196,7 @@ int basico(string pedido, string archivo_proveedores) {
 
         if ( (inv = inicializar_tabla_productos_1(NULL, cl))==NULL){
             cerr << "Error al leer inventario" << endl;
-			error = -1;			
+            error = -1;            
             continue;
         }
 
@@ -206,8 +206,8 @@ int basico(string pedido, string archivo_proveedores) {
         if ((resp_consulta = consultar_inventario_1(&texto_consulta, cl))==NULL){
             cerr << "Error al realizar la consulta" << endl;
             error = -1;
-			delete texto_consulta;
-			continue;
+            delete texto_consulta;
+            continue;
         }
 
         delete texto_consulta;
@@ -220,18 +220,18 @@ int basico(string pedido, string archivo_proveedores) {
         clnt_destroy(cl);         /* finalizo la conexion con el cliente */
     }
 
-	while (!consulta->empty() && cantidad_acumulada <= cantidad_solicitada){
-		producto p = consulta->top(); 
-    	compra.push_back(p);
-		cantidad_acumulada += p.cantidad;
-		consulta->pop();
-	}    
-	
-	return error;
+    while (!consulta->empty() && cantidad_acumulada <= cantidad_solicitada){
+        producto p = consulta->top(); 
+        compra.push_back(p);
+        cantidad_acumulada += p.cantidad;
+        consulta->pop();
+    }    
+    
+    return error;
 }
 
 int avanzado(string mensaje, string archivo_proveedores) {
-	int error = 0; 
+    int error = 0; 
     CLIENT *cl;                 /* manejo de RPC */
     char *servidor;          /* hostname */
     char **resp_pedido;     /* valor de retorno del pedido */
@@ -242,44 +242,44 @@ int avanzado(string mensaje, string archivo_proveedores) {
 
     vector<producto>::const_iterator it;
 
-	for (it = compra.begin(); it != compra.end(); ++it) {
-        producto p = *it;		
+    for (it = compra.begin(); it != compra.end(); ++it) {
+        producto p = *it;        
 
-    	vendedor* v = tabla_proveedores[p.nombre_vendedor];
+        vendedor* v = tabla_proveedores[p.nombre_vendedor];
 
-		servidor = new char[(v->direccion).length()+1];
-		strcpy(servidor, v->direccion.c_str());
+        servidor = new char[(v->direccion).length()+1];
+        strcpy(servidor, v->direccion.c_str());
 
-		/* manejo de conexion con el cliente */
-		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, (char*)"udp")) == NULL) {
-			cerr << "Error de conexión con el proveedor '" << p.nombre_vendedor << endl;
-			error = -1;
-			delete servidor;
-			return error; 
-		}
-		delete servidor;
+        /* manejo de conexion con el cliente */
+        if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, (char*)"udp")) == NULL) {
+            cerr << "Error de conexión con el proveedor '" << p.nombre_vendedor << endl;
+            error = -1;
+            delete servidor;
+            return error; 
+        }
+        delete servidor;
 
-		char * pedido = new char[mensaje.length()+1];
-		strcpy(pedido, mensaje.c_str());
+        char * pedido = new char[mensaje.length()+1];
+        strcpy(pedido, mensaje.c_str());
 
-		cout << "Realizar pedido: " << pedido << endl; 
+        cout << "Realizar pedido: " << pedido << endl;
 
-		if ((resp_pedido = realizar_pedido_1(&pedido, cl))==NULL){
-			error = -1;
-			cerr << "Error al realizar el pedido" << endl;
-		} 
+        if ((resp_pedido = realizar_pedido_1(&pedido, cl))==NULL){
+            error = -1;
+            cerr << "Error al realizar el pedido" << endl;
+        } 
 
-		delete pedido;
+        delete pedido;
 
-		if  ((inv = actualizar_inventario_1(NULL, cl))==NULL){
-			error = -1;
-			cerr << "Error al realizar el pedido" << endl;
-		}
+        if  ((inv = actualizar_inventario_1(NULL, cl))==NULL){
+            error = -1;
+            cerr << "Error al realizar el pedido" << endl;
+        }
 
-		clnt_destroy(cl);  
+        clnt_destroy(cl);  
 
-   	}
-	return error;
+       }
+    return error;
 
 }
 
@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
         return imprimir_uso();
     }
 
-	string archivo_proveedores = argv[2]; 
+    string archivo_proveedores = argv[2]; 
 
     int puerto;
     istringstream s(argv[4]);
@@ -325,42 +325,42 @@ int main(int argc, char** argv) {
 
         cout << "[cliente: " << mensaje_recibido << "]" << endl;
 
-		avanzado(mensaje_recibido, archivo_proveedores);
+        avanzado(mensaje_recibido, archivo_proveedores);
 
-		string mensaje_compra; 
+        string mensaje_compra; 
 
-		// Ver compras realizadas 
-		if (compra.empty()){
-			mensaje_compra = "0"; 
-		}
-
-	    vector<producto>::const_iterator it;
-		
-		for (it = compra.begin(); it != compra.end(); ++it) {
-        	producto p = *it;
-			
-			stringstream cant;
-			cant << p.cantidad;
-			
-			stringstream prec;
-			prec << p.precio;
-
-			mensaje_compra += p.nombre_vendedor + "&" + cant.str() + "&" + prec.str() + "|";
-		}
-		compra.clear();
-
-		bzero(buffer, 256);
-		strcpy(buffer, mensaje_compra.c_str());
-
-		cout << string(buffer) << endl; 
-
-        if (!write(newsockfd, buffer, 255)) {
-        	cerr << "Error al escribir" << endl;
+        // Ver compras realizadas 
+        if (compra.empty()){
+            mensaje_compra = "0"; 
         }
 
-		cout << string(buffer) << endl; 
+        vector<producto>::const_iterator it;
+        
+        for (it = compra.begin(); it != compra.end(); ++it) {
+            producto p = *it;
+            
+            stringstream cant;
+            cant << p.cantidad;
+            
+            stringstream prec;
+            prec << p.precio;
 
-        close(newsockfd);		
+            mensaje_compra += p.nombre_vendedor + "&" + cant.str() + "&" + prec.str() + "|";
+        }
+        compra.clear();
+
+        bzero(buffer, 256);
+        strcpy(buffer, mensaje_compra.c_str());
+
+        cout << string(buffer) << endl; 
+
+        if (!write(newsockfd, buffer, 255)) {
+            cerr << "Error al escribir" << endl;
+        }
+
+        cout << string(buffer) << endl; 
+
+        close(newsockfd);        
 
     }
 }

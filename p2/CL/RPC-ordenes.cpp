@@ -1,8 +1,8 @@
 /*
-	Proyecto 1 - CI4835
-	Autores:
-		Alejandro Machado 07-41138
-		Maria Leonor Pacheco 07-41302
+    Proyecto 1 - CI4835
+    Autores:
+        Alejandro Machado 07-41138
+        Maria Leonor Pacheco 07-41302
 */
 
 #include <iostream>
@@ -265,12 +265,26 @@ int main(int argc, char** argv) {
             cout << "error al leer" << endl;
             exit(1);
         }
-        cout << "[servidor <" << string(buffer) << "]" << endl;
+        cout << "[maq_inter: " << string(buffer) << "]" << endl;
+
+        int numero_compras;
+        char** compras = split(buffer, &numero_compras, (char*) "|");
+        for (int i = 0; i < numero_compras; i++) {
+            // compras de diferentes proveedores
+            int n;
+            char** productos = split(compras[i], &n, (char*) "&");
+            int cant = str_to_int(productos[1]);
+            double precio = str_to_double(productos[2]);
+            producto p = producto(pedid_iter->first, cant, precio, productos[0]);
+            compra.push_back(p);
+        }
 
       //  if (buffer[0] != '0') {
       //  }
 
         close(sockfd);
     }
+
+    generar_reporte_compra();
 }
 

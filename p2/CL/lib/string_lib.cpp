@@ -17,28 +17,46 @@ const string trim(const string& pString) {
     return pString.substr(beginStr, range);
 }
 
-inline string int_to_str(int n) {
+string int_to_str(int n) {
     stringstream s;
     s << n;
     return s.str();
 }
 
-inline string double_to_str(double n) {
+string double_to_str(double n) {
     stringstream s;
     s << n;
     return s.str();
 }
 
-inline int str_to_int(string s) {
+int str_to_int(string s) {
     int n;
     istringstream ss(s);
     ss >> n;
     return n;
 }
 
-inline int str_to_double(string s) {
+int str_to_double(string s) {
     double n;
     istringstream ss(s);
     ss >> n;
     return n;
+}
+
+// Tomado de
+// http://cboard.cprogramming.com/c-programming/88942-split-string-function.html
+char  ** split(char string[], int * num, char * sep) {
+    char * pch;
+    char ** out = 0;
+    int i = 0;
+    pch = strtok (string, sep );
+    while (pch != 0 ) {
+        out = (char**) realloc(out, (i + 1) * sizeof(char *));
+        out[i] = (char*) malloc(strlen(pch) + 1);
+        strcpy(out[i], pch);
+        ++i;
+        pch = strtok (NULL, sep);
+    }
+    *num = i;
+    return out;
 }
