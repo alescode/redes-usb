@@ -209,6 +209,8 @@ int basico(string pedido, string archivo_proveedores) {
             delete texto_consulta;
             continue;
         }
+        cout << "[proveedor " << proov_iter->first << ": " << *resp_consulta 
+             << "]" << endl;
 
         delete texto_consulta;
 
@@ -222,6 +224,8 @@ int basico(string pedido, string archivo_proveedores) {
 
     while (!consulta->empty() && cantidad_acumulada <= cantidad_solicitada){
         producto p = consulta->top(); 
+        if (cantidad_solicitada < p.cantidad)
+            p.cantidad = cantidad_solicitada;
         compra.push_back(p);
         cantidad_acumulada += p.cantidad;
         consulta->pop();
@@ -264,7 +268,7 @@ int avanzado(string mensaje, string archivo_proveedores) {
         char * pedido = new char[p_compra.length()+1];
         strcpy(pedido, p_compra.c_str());
 
-        cout << "Realizar pedido: " << pedido << endl;
+        //cout << "Realizar pedido: " << pedido << endl;
 
         if ((resp_pedido = realizar_pedido_1(&pedido, cl))==NULL){
             error = -1;
@@ -354,15 +358,11 @@ int main(int argc, char** argv) {
         bzero(buffer, 256);
         strcpy(buffer, mensaje_compra.c_str());
 
-        cout << string(buffer) << endl; 
 
         if (!write(newsockfd, buffer, 255)) {
             cerr << "Error al escribir" << endl;
         }
 
-        cout << string(buffer) << endl; 
-
         close(newsockfd);        
-
     }
 }

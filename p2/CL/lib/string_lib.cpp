@@ -36,7 +36,7 @@ int str_to_int(string s) {
     return n;
 }
 
-int str_to_double(string s) {
+double str_to_double(string s) {
     double n;
     istringstream ss(s);
     ss >> n;
