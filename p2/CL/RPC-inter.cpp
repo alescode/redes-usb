@@ -259,8 +259,10 @@ int avanzado(string mensaje, string archivo_proveedores) {
         }
         delete servidor;
 
-        char * pedido = new char[mensaje.length()+1];
-        strcpy(pedido, mensaje.c_str());
+		string p_compra = p.nombre+"&"+int_to_str(p.cantidad);
+
+        char * pedido = new char[p_compra.length()+1];
+        strcpy(pedido, p_compra.c_str());
 
         cout << "Realizar pedido: " << pedido << endl;
 
