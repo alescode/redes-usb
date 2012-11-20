@@ -116,7 +116,12 @@ void inicializar_tabla_proveedores(string archivo_proveedores) {
 /* Establece una conexión al puerto como servidor */
 int conectar(int puerto) {
     struct sockaddr_in servidor;
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);	
+	
+ 	if (sockfd < 0) {
+        return -1; // error abriendo el socket
+    }
+
     bzero((char *) &servidor, sizeof(servidor));
     servidor.sin_family = AF_INET;
     servidor.sin_addr.s_addr = INADDR_ANY;
@@ -128,6 +133,35 @@ int conectar(int puerto) {
     }
 
     return sockfd;
+}
+
+int recibir_datagrama(int sockfd, char ** mensaje){
+	struct sockaddr_in from;
+	int from_len = sizeof(from);
+	char * buffer = new char[256];
+    bzero(buffer, 256);
+
+	if (recvfrom(sockfd, buffer, 255, 0, (struct sockaddr *)&from, (socklen_t*)&from_len) == -1){
+		return -1; //error recibiendo datagrama
+	}
+	
+
+	*mensaje = buffer; 
+	return 0;	
+}
+
+int enviar_datagrama(int sockfd, string mensaje){
+	struct sockaddr_in from;
+	int from_len = sizeof(from);
+	char buffer[256];
+    bzero(buffer, 256);
+	strcpy(buffer, mensaje.c_str());
+
+	if (sendto(sockfd, buffer, 255, 0, (struct sockaddr *)&from, from_len) == -1){
+		return -1; //error enviando datagrama
+	}
+	return 0;	
+
 }
 
 /* Finaliza el servidor apropiadamente luego de recibir SIGINT (CTRL-C) */
@@ -303,33 +337,21 @@ int main(int argc, char** argv) {
     istringstream s(argv[4]);
     s >> puerto;
 
-    int sockfd;
-    sockfd = conectar(puerto);
-    if (sockfd < 0) {
-        cerr << "Error de conexion" << endl;
-    }
-
-    listen(sockfd, 5);
-
-    struct sockaddr_in cliente;
-    socklen_t clilen = sizeof(cliente);
+   	int sockfd = conectar(puerto);
+	struct sockaddr_in from; 
+	int from_len = sizeof(from);
+	char buffer[256];
 
     while (true) {
-        int newsockfd = accept(sockfd, (struct sockaddr*) &cliente, &clilen);
-        if (newsockfd < 0) {
-            imprimir_error_socket(puerto);
-            exit(1);
-        }
-        // se ha establecido una conexión
+      	 
+		bzero(buffer, 256);
 
-        char buffer[256];
-        bzero(buffer, 256);
-        if (!read(newsockfd, buffer, 255)) {
-            cerr << "Error al leer" << endl;
-        }
-        string mensaje_recibido = string(buffer);
-
-        cout << "[cliente: " << mensaje_recibido << "]" << endl;
+		if (recvfrom(sockfd, buffer, 255, 0, (struct sockaddr *)&from, (socklen_t*)&from_len) == -1){
+			cerr << "error recibiendo datagrama" << endl;
+		}
+        		
+		string mensaje_recibido = string(buffer);
+      	cout << "[cliente: " << mensaje_recibido << "]" << endl;
 
         avanzado(mensaje_recibido, archivo_proveedores);
 
@@ -355,14 +377,11 @@ int main(int argc, char** argv) {
         }
         compra.clear();
 
-        bzero(buffer, 256);
-        strcpy(buffer, mensaje_compra.c_str());
+      	strcpy(buffer, mensaje_compra.c_str());
 
+		if (sendto(sockfd, buffer, 255, 0, (struct sockaddr *)&from, from_len) == -1){
+			cerr << "error al enviar datagrama" << endl;
+		}
 
-        if (!write(newsockfd, buffer, 255)) {
-            cerr << "Error al escribir" << endl;
-        }
-
-        close(newsockfd);        
     }
 }

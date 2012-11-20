@@ -123,13 +123,14 @@ void insertar_en_tabla_consultas(producto* p) {
     tabla_consultas[p->nombre]->push(*p);
 }
 
-/* Intenta conectarse con el servidor a través del puerto y la dirección
- * especificados */
-int conectar(int puerto, string direccion) {
+/* se conecta con el servidor y envia datagrama  */
+int enviar_datagrama(int puerto, string direccion, string mensaje) {
     struct sockaddr_in serv_addr;
     struct hostent *server;
+	int length = sizeof(struct sockaddr_in); 
 
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
     if (sockfd < 0) {
         return -1; // error abriendo el socket
     }
@@ -141,11 +142,33 @@ int conectar(int puerto, string direccion) {
     serv_addr.sin_addr.s_addr = ((struct in_addr *)(server->h_addr))->s_addr;
     serv_addr.sin_port = htons(puerto);
 
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) {
-        return -2; // error de conexion
-    }
+	char buffer[256];
+    bzero(buffer, 256);
 
+	strcpy(buffer, mensaje.c_str());
+
+
+	if (sendto(sockfd, buffer, 255, 0,(struct sockaddr *) &serv_addr, length) == -1 ) {
+		return -1; // error enviando datagrama 
+	}
+	
     return sockfd;
+}
+/* recibe el datagrama enviado por el servidor */
+int recibir_datagrama(int sockfd, char ** mensaje){
+	struct sockaddr_in from; 
+	int from_len = sizeof(from); 
+
+	char * buffer = new char[256];
+    bzero(buffer, 256);
+
+	if (recvfrom(sockfd, buffer, 256, 0,(struct sockaddr *) &from, (socklen_t*)&from_len) == -1){
+		return -1; //error recibiendo datagrama 
+	}
+
+	*mensaje = buffer;
+	return 0;
+	
 }
 
 void escribir_encabezado_reporte(string tipo_reporte) {
@@ -205,9 +228,19 @@ int main(int argc, char** argv) {
     int error = 0;
     inicializar_tabla_pedidos(archivo_pedidos);
 
-    int puerto = 41138;
-    string direccion = "localhost";
-    char buffer[256];
+    int puerto;
+    string direccion;
+
+    ifstream datos;
+    datos.open(archivo_intermedio.c_str());
+    string linea;
+    getline(datos, linea);
+	int pos_separador = linea.find("&");
+	direccion = trim(linea.substr(0, pos_separador));
+	istringstream s(linea.substr(pos_separador + 1, linea.length()));
+	s >> puerto; // no se verifica formato del archivo
+
+	char * resp_pedido;
 
     map<string, int>::const_iterator pedid_iter;
     string nombre_pedido;
@@ -216,41 +249,29 @@ int main(int argc, char** argv) {
     int sockfd;
     for (pedid_iter = tabla_pedidos.begin(); 
             pedid_iter != tabla_pedidos.end(); ++pedid_iter) {
-        sockfd = conectar(puerto, direccion);
-        if (sockfd < 0) {
-            cerr << "Error de conexión con el intermediario" << endl;
-            error = 1;
-            continue;
-        }
-
+      
         stringstream s;
         s << pedid_iter->second;
         cantidad_pedido = s.str();
 
         nombre_pedido = pedid_iter->first + "&" + cantidad_pedido;
 
-        bzero(buffer, 256);
-        strcpy(buffer, nombre_pedido.c_str());
+		if (( sockfd = enviar_datagrama(puerto, direccion, nombre_pedido)) < 0){
+			cerr << "Error enviando datagrama" << endl; 
+		}
+		
+		if (recibir_datagrama(sockfd, &resp_pedido) < 0){
+			cerr << "Error recibiendo datagrama" << endl; 
+		} 
 
-        if (!write(sockfd, buffer, 255)) {
-            cout << "error al escribir" << endl;
-            return -1;
-        }
+        cout << "[maq_inter: " << string(resp_pedido) << "]" << endl;
 
-        bzero(buffer, 256);
-
-        if (!read(sockfd, buffer, 255)) {
-            cout << "error al leer" << endl;
-            exit(1);
-        }
-        cout << "[maq_inter: " << string(buffer) << "]" << endl;
-
-        if (buffer[0] == '0') {
+        if (resp_pedido[0] == '0') {
             continue;
         }
 
         int numero_compras;
-        char** compras = split(buffer, &numero_compras, (char*) "|");
+        char** compras = split(resp_pedido, &numero_compras, (char*) "|");
         for (int i = 0; i < numero_compras; i++) {
             // compras de diferentes proveedores
             int n;
