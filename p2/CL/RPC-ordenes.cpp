@@ -162,51 +162,11 @@ void escribir_pie_reporte(double total) {
     cout << endl;
 }
 
-void generar_reporte_consulta() {
-    escribir_encabezado_reporte("CONSULTA");
-
-    map<string, priority_queue<producto, 
-             vector<producto>, comparacionProductos>* >::const_iterator pos;
-    double total = 0.0;
-    for (pos = tabla_consultas.begin(); 
-         pos != tabla_consultas.end(); ++pos) {
-
-        string nombre_producto = pos->first;
-        int unidades_faltantes = tabla_pedidos[nombre_producto];
-        int unidades_pedidas;
-
-        while (!pos->second->empty() && unidades_faltantes > 0) {
-            producto p = pos->second->top();
-
-            if (p.cantidad > tabla_pedidos[nombre_producto])
-                unidades_pedidas = tabla_pedidos[nombre_producto];
-            else
-                unidades_pedidas = p.cantidad;
-            p.cantidad = unidades_pedidas;
-
-            unidades_faltantes -= p.cantidad;
-
-            cout << setw(30) << nombre_producto << setw(20)
-                 << p.nombre_vendedor << setw(15) << fixed
-                 << p.precio << setw(10) << p.cantidad << setw(10) 
-                 << fixed << p.cantidad * p.precio << endl;
-            total += p.cantidad * p.precio;
-
-            compra.push_back(p);
-
-            pos->second->pop();
-        }
-    }
-    escribir_pie_reporte(total);
-}
-
 void generar_reporte_compra() {
-    escribir_encabezado_reporte("PEDIDOS SOLICITADOS");
     double total = 0.0;
     vector<producto>::const_iterator it;
     for (it = compra.begin(); it != compra.end(); ++it) {
         producto p = *it;
-
         cout << setw(30) << p.nombre << setw(20)
              << p.nombre_vendedor << setw(15) << fixed
              << p.precio << setw(10) << p.cantidad << setw(10) 
@@ -214,6 +174,20 @@ void generar_reporte_compra() {
         total += p.cantidad * p.precio;
     }
     escribir_pie_reporte(total);
+}
+
+void reportar_no_satisfechos() {
+    cout << "*** PEDIDOS NO SATISFECHOS ***" << endl;
+    vector<producto>::const_iterator it;
+    for (it = compra.begin(); it != compra.end(); ++it) {
+        producto p = *it;
+        if (tabla_pedidos[p.nombre] > p.cantidad) {
+            cout << setw(30) << p.nombre << setw(20)
+                 << setw(15) << tabla_pedidos[p.nombre] - p.cantidad
+                 << setw(10) << setw(10)
+                 << endl;
+        }
+    }
 }
 
 int main(int argc, char** argv) {
@@ -267,7 +241,7 @@ int main(int argc, char** argv) {
         }
         cout << "[maq_inter: " << string(buffer) << "]" << endl;
 
-        if (buffer[0] != '0') {
+        if (buffer[0] == '0') {
             continue;
         }
 
@@ -286,6 +260,10 @@ int main(int argc, char** argv) {
         close(sockfd);
     }
 
+    escribir_encabezado_reporte("CONSULTA");
     generar_reporte_compra();
+    escribir_encabezado_reporte("PEDIDOS SOLICITADOS");
+    generar_reporte_compra();
+    reportar_no_satisfechos();
 }
 
