@@ -1,0 +1,39 @@
+Proyecto 2 - CI4835
+Autores:
+	Alejandro Machado 07-41138
+	Maria Leonor Pacheco 07-41302
+
+Implementacion de programa cliente/servidor para consultas y transacciones para la compra y venta de productos de ferreteria.
+
+Archivos que componen el proyecto:
+	Makefile      : makefile para compilar los programas 
+	ordenes.cpp   : programa cliente que se conecta a los proveedores, hace consultas y realiza pedidos.
+	proveedor.cpp : programa servidor que espera solicitudes de clientes, responde consultas y sirve pedidos.
+	/lib
+		producto.h producto.cpp     : tipo producto y sus operaciones
+		vendedor.h vendedor.cpp     : tipo vendedor y sus operaciones
+		string_lib.h string_lib.cpp : operaciones auxiliares para el manejo de strings
+		error.h error.cpp           : manejo de errores 
+
+Ejecucion:
+	./proveedor -f [archivo de inventario] -p [puerto]
+	./ordenes [a|b] -f [archivo de pedidos] -d [archivo de proveedores]
+	  b : modo basico
+	  a : modo avanzado
+
+Protocolo de interaccion:
+	Modo Basico:
+		Mensaje del cliente : [C][nombre del producto]
+		Mensaje del servidor: [cantidad en inventario][&][precio]
+	Modo Avanzado:
+		Mensaje del cliente : [C][nombre del producto]
+		Mensaje del servidor: [cantidad en inventario][&][precio]
+		Mensaje del cliente : [P][nombre del producto][&][cantidad]
+		Mensaje del servidor: [OK][&][cantidad]
+
+	* C identifica una consulta y P un pedido. 
+
+Detalles de implementacion:
+	C++, TCP, sockets
+	Servidor iterativo, ya que se atendera a un solo cliente, pueden atenderse las peticiones en serie.
+	
