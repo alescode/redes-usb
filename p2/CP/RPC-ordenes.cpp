@@ -215,7 +215,6 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 		string hostname = proov_iter->second->direccion.c_str();
         servidor = new char[hostname.length()+1]; 
 		strcpy(servidor, hostname.c_str());
-		cout << "[conectando con: " << servidor << "]" << endl;
 
 		/* manejo de conexion con el cliente */
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
@@ -225,7 +224,6 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
             continue;
 		}
 		
-		free(servidor);
 
 		vector<string>::const_iterator pedid_iter;
 
@@ -246,8 +244,9 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 				error = -1;
 			}
 
-			free(consulta);
             cout << "[servidor " << servidor << ": " << *resp_consulta << "]" << endl;
+		    free(servidor);
+			free(consulta);
 
             if (*resp_consulta[0] != '0') {
                 // si el proveedor tiene el producto se almacenan los datos
@@ -288,8 +287,6 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 		char * servidor = new char[(v->direccion).length()+1];
 		strcpy(servidor, v->direccion.c_str());
 
-		cout << "[conectando con: " << servidor << "]" << endl; 
-
 		/* manejo de conexion con el cliente */
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
             cerr << "Error de conexión con el proveedor '" << p.nombre_vendedor << endl;
@@ -297,7 +294,6 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 			free(servidor);
             continue;
 		}
-		free(servidor);
 		
         stringstream s;
         s << p.cantidad;
@@ -311,6 +307,8 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 			cerr << "Error al realizar el pedido" << endl;
 		}
 
+        cout << "[servidor " << servidor << ": " << *resp_pedido << "]" << endl;
+		free(servidor);
 		free(pedido);
 
 		if  ((inv = actualizar_inventario_1(NULL, cl))==NULL){
