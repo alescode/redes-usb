@@ -90,7 +90,6 @@ void inicializar_tabla_pedidos(string archivo_pedidos) {
 /* Lee el archivo de texto que contiene la lista de proveedores
  * e inicializa la estructura de datos */
 void inicializar_tabla_proveedores(string archivo_proveedores) {
-	cout << archivo_proveedores << endl; 
     ifstream datos;
     datos.open(archivo_proveedores.c_str());
 
@@ -197,24 +196,6 @@ void generar_reporte_compra() {
     escribir_pie_reporte(total);
 }
 
-void reportar_no_satisfechos() {
-    bool primera_vez = true;
-    vector<producto>::const_iterator it;
-    for (it = compra.begin(); it != compra.end(); ++it) {
-        producto p = *it;
-        if (tabla_pedidos[p.nombre] > p.cantidad) {
-            if (primera_vez) {
-                cout << "*** PEDIDOS NO SATISFECHOS ***" << endl;
-                primera_vez = false;
-            }
-            cout << setw(30) << p.nombre << setw(20)
-                 << setw(15) << tabla_pedidos[p.nombre] - p.cantidad
-                 << setw(10) << setw(10)
-                 << endl;
-        }
-    }
-}
-
 int basico(string archivo_pedidos, string archivo_proveedores) {
 
 	int error = 0;
@@ -234,7 +215,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 		string hostname = proov_iter->second->direccion.c_str();
         servidor = new char[hostname.length()+1]; 
 		strcpy(servidor, hostname.c_str());
-		cout << "Conectar con: " << servidor << endl;
+		cout << "[conectando con: " << servidor << "]" << endl;
 
 		/* manejo de conexion con el cliente */
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
@@ -266,6 +247,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 			}
 
 			free(consulta);
+            cout << "[servidor " << servidor << ": " << resp_consulta << "]" << endl;
 
             if (*resp_consulta[0] != '0') {
                 // si el proveedor tiene el producto se almacenan los datos
@@ -280,7 +262,6 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 	}
 
   	generar_reporte_consulta();
-    reportar_no_satisfechos();
 	return error;
 
 }
@@ -307,7 +288,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 		char * servidor = new char[(v->direccion).length()+1];
 		strcpy(servidor, v->direccion.c_str());
 
-		cout << "Conectando con: " << servidor << endl; 
+		cout << "[conectando con: " << servidor << "]" << endl; 
 
 		/* manejo de conexion con el cliente */
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
@@ -324,8 +305,6 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 
 		char * pedido = new char[mensaje.length()+1];
 		strcpy(pedido, mensaje.c_str());
-
-		cout << "Realizar pedido: " << pedido << endl; 
 
 		if ((resp_pedido = realizar_pedido_1(&pedido, cl))==NULL){
 			error = -1;

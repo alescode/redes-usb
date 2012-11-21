@@ -34,23 +34,6 @@ using namespace std;
 map<string, producto*> tabla_productos;
 string archivo_inventario = INVENTARIO;
 
-int * imprimir_inventario_1_svc( void * nada, struct svc_req *req) {
-	static int error = 0;
-    cout << left;
-    cout << endl << "INVENTARIO" << endl;
-    cout << setw(30) << "PRODUCTO" << setw(10) << "CANTIDAD" << endl;
-
-    map<string, producto*>::const_iterator pos;
-    for (pos = tabla_productos.begin();
-         pos != tabla_productos.end(); ++pos) {
-
-        cout << setw(30) << pos->first
-             << setw(10) << pos->second->cantidad << endl;
-    }
-    cout << endl;
-	return &error;
-}
-
 /* Lee el archivo de texto que contiene los datos del inventario
  * e inicializa la estructura de datos */
 int * inicializar_tabla_productos_1_svc( void * nada, struct svc_req *req) {
