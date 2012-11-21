@@ -151,19 +151,21 @@ void generar_reporte_consulta() {
          pos != tabla_consultas.end(); ++pos) {
 
         string nombre_producto = pos->first;
-        int unidades_faltantes = tabla_pedidos[nombre_producto];
-        int unidades_pedidas;
+
+		int unidades_faltantes = tabla_pedidos[nombre_producto];
 
         while (!pos->second->empty() && unidades_faltantes > 0) {
-            producto p = pos->second->top();
+        	producto p = pos->second->top();
+			int unidades_a_pedir;
+			int inventario = p.cantidad;
 
-            if (p.cantidad > tabla_pedidos[nombre_producto])
-                unidades_pedidas = tabla_pedidos[nombre_producto];
-            else
-                unidades_pedidas = p.cantidad;
-            p.cantidad = unidades_pedidas;
+			if (inventario >= unidades_faltantes)
+				unidades_a_pedir = unidades_faltantes;
+			else 
+				unidades_a_pedir = inventario;
 
-            unidades_faltantes -= p.cantidad;
+			unidades_faltantes -= unidades_a_pedir;
+			p.cantidad = unidades_a_pedir;
 
             cout << setw(30) << nombre_producto << setw(20)
                  << p.nombre_vendedor << setw(15) << fixed
