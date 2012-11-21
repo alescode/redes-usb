@@ -1,7 +1,7 @@
-alicate & 456 & 580
+alicate & 50 & 0.2
 bloques de cemento & 0 & 20
 bombillos 100vatios & 200 & 80
-cal & 40 & 30
+cal & 10 & 30
 cegueta & 160 & 150
 cemento & 0 & 120
 clavos de acero & 0 & 3
@@ -9,7 +9,7 @@ destornilladores & 560 & 92
 llave de paso & 500 & 110
 martillo & 80 & 120
 pego & 230 & 40
-pintura brillo de seda & 80 & 450
+pintura brillo de seda & 10 & 450
 pintura de aceite & 680 & 350
 rejillas metalicas & 240 & 50
 sierra & 372 & 1000
