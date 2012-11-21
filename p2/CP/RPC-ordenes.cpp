@@ -247,7 +247,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 			}
 
 			free(consulta);
-            cout << "[servidor " << servidor << ": " << resp_consulta << "]" << endl;
+            cout << "[servidor " << servidor << ": " << *resp_consulta << "]" << endl;
 
             if (*resp_consulta[0] != '0') {
                 // si el proveedor tiene el producto se almacenan los datos
