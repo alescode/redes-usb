@@ -256,12 +256,21 @@ int basico(string pedido, string archivo_proveedores) {
         clnt_destroy(cl);         /* finalizo la conexion con el cliente */
     }
 
-    while (!consulta->empty() && cantidad_acumulada <= cantidad_solicitada){
+	int unidades_faltantes = cantidad_solicitada;
+
+    while (!consulta->empty() && unidades_faltantes > 0){
         producto p = consulta->top(); 
-        if (cantidad_solicitada < p.cantidad)
-            p.cantidad = cantidad_solicitada;
+		int unidades_a_pedir;
+		int inventario = p.cantidad;
+
+		if (inventario >= unidades_faltantes)
+			unidades_a_pedir = unidades_faltantes;
+		else 
+			unidades_a_pedir = inventario;
+
+		unidades_faltantes -= unidades_a_pedir;
+		p.cantidad = unidades_a_pedir;
         compra.push_back(p);
-        cantidad_acumulada += p.cantidad;
         consulta->pop();
     }    
     
