@@ -199,24 +199,6 @@ void generar_reporte_compra() {
     escribir_pie_reporte(total);
 }
 
-void reportar_no_satisfechos() {
-    bool primera_vez = true;
-    vector<producto>::const_iterator it;
-    for (it = compra.begin(); it != compra.end(); ++it) {
-        producto p = *it;
-        if (tabla_pedidos[p.nombre] > p.cantidad) {
-            if (primera_vez) {
-                cout << "*** PEDIDOS NO SATISFECHOS ***" << endl;
-                primera_vez = false;
-            }
-            cout << setw(30) << p.nombre << setw(20)
-                 << setw(15) << tabla_pedidos[p.nombre] - p.cantidad
-                 << setw(10) << setw(10)
-                 << endl;
-        }
-    }
-}
-
 int main(int argc, char** argv) {
     if (argc != 5) {
         return imprimir_uso();
