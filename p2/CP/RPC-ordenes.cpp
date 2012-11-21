@@ -220,7 +220,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
             cerr << "Error de conexión con el proveedor '" << proov_iter->first << endl;
             error = 1;
-			free(servidor);
+			delete servidor;
             continue;
 		}
 		
@@ -245,8 +245,7 @@ int basico(string archivo_pedidos, string archivo_proveedores) {
 			}
 
             cout << "[servidor " << servidor << ": " << *resp_consulta << "]" << endl;
-		    free(servidor);
-			free(consulta);
+			delete consulta;
 
             if (*resp_consulta[0] != '0') {
                 // si el proveedor tiene el producto se almacenan los datos
@@ -291,7 +290,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 		if ((cl = clnt_create(servidor, PROVEEDOR_PROG, PROVEEDOR_VERS, "udp")) == NULL) {
             cerr << "Error de conexión con el proveedor '" << p.nombre_vendedor << endl;
             error = 1;
-			free(servidor);
+			delete servidor;
             continue;
 		}
 		
@@ -308,8 +307,7 @@ int avanzado(string archivo_pedidos, string archivo_proveedores) {
 		}
 
         cout << "[servidor " << servidor << ": " << *resp_pedido << "]" << endl;
-		free(servidor);
-		free(pedido);
+		delete pedido;
 
 		if  ((inv = actualizar_inventario_1(NULL, cl))==NULL){
 			error = -1;
