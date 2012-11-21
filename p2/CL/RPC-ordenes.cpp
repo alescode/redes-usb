@@ -271,6 +271,4 @@ int main(int argc, char** argv) {
     generar_reporte_compra();
     escribir_encabezado_reporte("PEDIDOS SOLICITADOS");
     generar_reporte_compra();
-    reportar_no_satisfechos();
 }
-

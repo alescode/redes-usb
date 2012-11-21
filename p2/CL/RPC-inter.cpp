@@ -48,8 +48,6 @@ priority_queue<producto, vector<producto>, comparacionProductos>* consulta;
 
 vector<producto> compra;
 
-
-
 int imprimir_uso() {
     cerr << "Uso: RPC-inter -d [proveedores] -p [puerto]" << endl;
     return 1; // reportar error a la consola
@@ -135,6 +133,7 @@ int conectar(int puerto) {
     return sockfd;
 }
 
+/* Implementa la recepcion de paquetes UDP desde el cliente */
 int recibir_datagrama(int sockfd, char ** mensaje){
 	struct sockaddr_in from;
 	int from_len = sizeof(from);
@@ -150,6 +149,7 @@ int recibir_datagrama(int sockfd, char ** mensaje){
 	return 0;	
 }
 
+/* Implementa el envio de paquetes UDP al cliente */
 int enviar_datagrama(int sockfd, string mensaje){
 	struct sockaddr_in from;
 	int from_len = sizeof(from);
@@ -331,7 +331,6 @@ int avanzado(string mensaje, string archivo_proveedores) {
     return error;
 
 }
-
 
 int main(int argc, char** argv) {
     signal(SIGINT, terminar); // escucha la señal SIGINT
