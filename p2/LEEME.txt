@@ -3,37 +3,63 @@ Autores:
 	Alejandro Machado 07-41138
 	Maria Leonor Pacheco 07-41302
 
-Implementacion de programa cliente/servidor para consultas y transacciones para la compra y venta de productos de ferreteria.
+Implementacion de procedimientos remotos para consultas y transacciones para la compra y venta de productos de ferreteria.
 
 Archivos que componen el proyecto:
-	Makefile      : makefile para compilar los programas 
-	ordenes.cpp   : programa cliente que se conecta a los proveedores, hace consultas y realiza pedidos.
-	proveedor.cpp : programa servidor que espera solicitudes de clientes, responde consultas y sirve pedidos.
-	/lib
-		producto.h producto.cpp     : tipo producto y sus operaciones
-		vendedor.h vendedor.cpp     : tipo vendedor y sus operaciones
-		string_lib.h string_lib.cpp : operaciones auxiliares para el manejo de strings
-		error.h error.cpp           : manejo de errores 
+	/CP
+		configure						: script para ejecutar rpcgen y generar archivos necesarios para compilar
+		Makefile						: makefile para compilar
+		producto.x						: especificacion de funciones remotas
+		RPC-ordenes.cpp					: programa cliente para el manejo de pedidos a proveedores
+		RPC-proveedor.cpp				: funciones remotas de 1 proveedor para servir pedidos
+		/lib 
+			producto.h producto.cpp     : tipo producto y sus operaciones
+			vendedor.h vendedor.cpp     : tipo vendedor y sus operaciones
+			string_lib.h string_lib.cpp : operaciones auxiliares para el manejo de strings
+	/CL
+		configure						: script para ejecutar rpcgen y generar archivos necesarios para compilar
+		Makefile      					: makefile para compilar
+		producto.x						: especificacion de funciones remotas
+		RPC-ordenes.cpp   				: programa cliente que interactua con el usuario
+		RPC-inter.cpp					: programa servidor/cliente para asistir conexion entre el cliente y varios servidores
+		RPC-proveedor.cpp 				: funciones remotas de 1 proveedor para servir pedidos
+		/lib
+			producto.h producto.cpp     : tipo producto y sus operaciones
+			vendedor.h vendedor.cpp     : tipo vendedor y sus operaciones
+			string_lib.h string_lib.cpp : operaciones auxiliares para el manejo de strings
+
+Compilacion:
+	./configure 
+	make
 
 Ejecucion:
-	./proveedor -f [archivo de inventario] -p [puerto]
-	./ordenes [a|b] -f [archivo de pedidos] -d [archivo de proveedores]
-	  b : modo basico
-	  a : modo avanzado
+	/CP
+		./RPC-proveedor 
+		./RPC-ordenes -f [archivo de pedidos] -d [proveedores]
+	/CL
+		./RPC-proveedor
+		./RPC-inter -d [proveedores] -p [puerto]
+		./RPC-ordenes -f [archivo de pedidos] -m [maquina intermediaria]
 
 Protocolo de interaccion:
-	Modo Basico:
-		Mensaje del cliente : [C][nombre del producto]
+	/CP
+		Mensaje del cliente : [nombre del producto]
 		Mensaje del servidor: [cantidad en inventario][&][precio]
-	Modo Avanzado:
-		Mensaje del cliente : [C][nombre del producto]
-		Mensaje del servidor: [cantidad en inventario][&][precio]
-		Mensaje del cliente : [P][nombre del producto][&][cantidad]
+		Mensaje del cliente : [nombre del producto][&][cantidad]
 		Mensaje del servidor: [OK][&][cantidad]
 
-	* C identifica una consulta y P un pedido. 
+	/CL
+		Mensaje del cliente : [nombre del producto][&][cantidad]
+		Mensaje del inter   : [nombre del producto]
+		Mensaje del servidor: [cantidad en inventario][&][precio]
+		Mensaje del inter   : [nombre del producto][&][cantidad]
+		Mensaje del servidor: [OK][&][cantidad]
+		Mensaje del inter	: [proveedor1][&][cantidad1]&[precio2][|] ... [proveedorN][&][cantidadN]&[precioN][|] 
+
 
 Detalles de implementacion:
-	C++, TCP, sockets
-	Servidor iterativo, ya que se atendera a un solo cliente, pueden atenderse las peticiones en serie.
+	C++, rpcgen
+	* Para el caso cliente-inter: UDP, sockets.
 	
+	Inter es iterativo, ya que se atendera a un solo cliente, pueden atenderse las peticiones en serie.
+	Los proveedores son funciones remotas
